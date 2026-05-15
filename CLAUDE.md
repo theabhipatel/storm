@@ -14,6 +14,15 @@ Stage 1 of a Flipkart-style e-commerce platform for India (single-seller). Micro
 
 **Hard rule:** never modify any file in `requirement.md`, `docs/`, `design/`, or `plan/` unless the user explicitly says "update X". For every other change, ask first.
 
+## Repository layout
+
+| Path | Contains |
+|---|---|
+| `<repo-root>/` | Planning artifacts only — `CLAUDE.md`, `requirement.md`, `docs/`, `design/`, `plan/` |
+| `<repo-root>/storm/` | **All code lives here.** Monorepo root: `apps/`, `services/`, `packages/`, `infra/`, `pnpm-workspace.yaml`, etc. |
+
+When building, all `pnpm`, `docker-compose`, `turbo`, and similar commands run from inside `storm/`. Never create code files outside `storm/`.
+
 ## How to work each day
 
 1. Read the current day's plan file in full
