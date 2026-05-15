@@ -1,0 +1,172 @@
+name: storm-local
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: storm-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports: ["5432:5432"]
+    volumes:
+      - storm-pgdata:/var/lib/postgresql/data
+      - ./infra/local/postgres-init.sh:/docker-entrypoint-initdb.d/00-init.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    container_name: storm-redis
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    ports: ["6379:6379"]
+    volumes:
+      - storm-redisdata:/data
+      - ./infra/local/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redpanda:
+    image: redpandadata/redpanda:v24.2.5
+    container_name: storm-redpanda
+    command:
+      - redpanda
+      - start
+      - --kafka-addr=internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr=internal://redpanda:9092,external://localhost:19092
+      - --pandaproxy-addr=internal://0.0.0.0:8082,external://0.0.0.0:18082
+      - --advertise-pandaproxy-addr=internal://redpanda:8082,external://localhost:18082
+      - --schema-registry-addr=internal://0.0.0.0:8081,external://0.0.0.0:18081
+      - --rpc-addr=redpanda:33145
+      - --advertise-rpc-addr=redpanda:33145
+      - --mode=dev-container
+      - --smp=1
+      - --memory=1G
+      - --reserve-memory=0M
+      - --overprovisioned
+      - --node-id=0
+      - --check=false
+    ports:
+      - "19092:19092"   # Kafka API (external)
+      - "18081:18081"   # Schema Registry
+      - "18082:18082"   # Pandaproxy
+      - "9644:9644"     # Admin API
+    volumes:
+      - storm-redpandadata:/var/lib/redpanda/data
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster health | grep -E 'Healthy:.+true'"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  redpanda-console:
+    image: redpandadata/console:v2.7.2
+    container_name: storm-redpanda-console
+    depends_on: [redpanda]
+    environment:
+      KAFKA_BROKERS: "redpanda:9092"
+      KAFKA_SCHEMAREGISTRY_ENABLED: "true"
+      KAFKA_SCHEMAREGISTRY_URLS: "http://redpanda:8081"
+    ports: ["18080:8080"]
+
+  opensearch:
+    image: opensearchproject/opensearch:2.16.0
+    container_name: storm-opensearch
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "DISABLE_SECURITY_PLUGIN=true"
+      - "DISABLE_INSTALL_DEMO_CONFIG=true"
+    ulimits:
+      memlock: { soft: -1, hard: -1 }
+      nofile: { soft: 65536, hard: 65536 }
+    ports: ["9200:9200", "9600:9600"]
+    volumes:
+      - storm-osdata:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9200/_cluster/health | grep -E '\"status\":\"(green|yellow)\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  mongodb:
+    image: mongo:7
+    container_name: storm-mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    ports: ["27018:27017"]
+    volumes:
+      - storm-mongodata:/data/db
+      - ./infra/local/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:RELEASE.2024-09-22T00-33-43Z
+    container_name: storm-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio12345
+    ports: ["9000:9000", "9001:9001"]
+    volumes:
+      - storm-miniodata:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  minio-init:
+    image: minio/mc:RELEASE.2024-09-16T17-43-14Z
+    container_name: storm-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 minio minio12345 &&
+      mc mb --ignore-existing local/storm-media &&
+      mc anonymous set download local/storm-media &&
+      echo 'minio bucket ready'"
+    restart: "no"
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: storm-mailhog
+    ports: ["1025:1025", "8025:8025"]
+
+  pgadmin:
+    image: dpage/pgadmin4:8.12
+    container_name: storm-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: dev@storm.dev
+      PGADMIN_DEFAULT_PASSWORD: pgadmin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports: ["5050:80"]
+    depends_on: [postgres]
+
+  redisinsight:
+    image: redis/redisinsight:2.56
+    container_name: storm-redisinsight
+    ports: ["5540:5540"]
+    depends_on: [redis]
+
+volumes:
+  storm-pgdata:
+  storm-redisdata:
+  storm-redpandadata:
+  storm-osdata:
+  storm-mongodata:
+  storm-miniodata:

@@ -1,0 +1,84 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+    paths: ["storm/**", ".github/workflows/ci.yml"]
+  pull_request:
+    branches: [main]
+    paths: ["storm/**", ".github/workflows/ci.yml"]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9.12.0"
+  TURBO_TELEMETRY_DISABLED: "1"
+
+defaults:
+  run:
+    working-directory: storm
+
+jobs:
+  build-test-lint:
+    name: build, lint, test (turbo-filtered)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: storm/pnpm-lock.yaml
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint (changed workspaces)
+        run: pnpm turbo run lint --filter='...[origin/main]'
+
+      - name: Test (changed workspaces)
+        run: pnpm turbo run test --filter='...[origin/main]'
+
+      - name: Build (changed workspaces)
+        run: pnpm turbo run build --filter='...[origin/main]'
+
+  docker-identity:
+    name: docker build + trivy scan (identity-service)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: build-test-lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build identity image
+        uses: docker/build-push-action@v6
+        with:
+          context: storm
+          file: storm/services/identity/Dockerfile
+          push: false
+          load: true
+          tags: storm/identity:${{ github.sha }}
+
+      - name: Trivy scan (critical/high)
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: storm/identity:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: "true"

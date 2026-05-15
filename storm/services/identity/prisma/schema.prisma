@@ -1,0 +1,11 @@
+// Identity service Prisma schema.
+// Entities are added on Day 2 (users, OTP records, refresh tokens, sessions).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}

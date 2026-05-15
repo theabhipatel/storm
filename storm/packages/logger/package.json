@@ -1,0 +1,33 @@
+{
+  "name": "@storm/logger",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint src --max-warnings=0",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "clean": "rm -rf dist .turbo"
+  },
+  "dependencies": {
+    "pino": "9.4.0",
+    "pino-pretty": "11.2.2"
+  },
+  "devDependencies": {
+    "@storm/tsconfig": "workspace:*",
+    "@storm/eslint-config": "workspace:*",
+    "@types/node": "20.16.5",
+    "typescript": "5.5.4",
+    "vitest": "2.1.1",
+    "eslint": "8.57.1"
+  }
+}

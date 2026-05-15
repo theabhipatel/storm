@@ -1,0 +1,9 @@
+{
+  "extends": "@storm/tsconfig/react.json",
+  "compilerOptions": {
+    "types": ["vite/client"],
+    "baseUrl": ".",
+    "paths": { "@/*": ["./src/*"] }
+  },
+  "include": ["src"]
+}
