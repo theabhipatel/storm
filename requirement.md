@@ -114,6 +114,7 @@ Each service owns its database. No service queries another service's database di
 | **GitOps deploys** | ArgoCD |
 | **CI** | GitHub Actions (build, test, push to ECR) |
 | **API Gateway** | Kong Gateway on K8s |
+| **Service mesh** | Linkerd (mTLS service-to-service, lower ops cost than Istio at this scale) |
 | **Edge** | CloudFront → AWS WAF → ALB → Kong |
 | **Secrets** | AWS Secrets Manager + External Secrets Operator (K8s); GitHub OIDC for CI/CD (no long-lived AWS keys in GitHub Secrets) |
 
@@ -129,7 +130,7 @@ Each service owns its database. No service queries another service's database di
 | **catalog-service** | Products, categories, brands, attributes, variants | Postgres (JSONB) | — |
 | **search-service** | Indexes catalog events into OpenSearch; serves search and filters | OpenSearch | — |
 | **inventory-service** | Stock levels, checkout-time reservations | Postgres | Redis (hot cache) |
-| **cart-service** | Per-user cart state | Redis (primary) | Postgres (durability) |
+| **cart-service** | Per-user cart state | Redis (AOF + RDB persistence) | — |
 | **order-service** | Order lifecycle, items, status transitions | Postgres | — |
 | **payment-service** | Razorpay integration, payment records, webhook handling | Postgres | — |
 | **wishlist-service** | User wishlists | Postgres | — |

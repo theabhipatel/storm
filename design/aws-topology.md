@@ -46,14 +46,16 @@ Cluster autoscaler scales nodes based on pending pods. HPAs scale pods on CPU + 
 
 ### 4.1 RDS (Postgres)
 
-One Postgres cluster per critical service to maintain isolation:
+One Postgres cluster per service — each service owns its database, no shared schemas. Required by the project's non-negotiable in `requirement.md §1`.
 
 | Cluster | Service | Class (initial) | Multi-AZ |
 |---|---|---|---|
 | `storm-identity` | identity | `db.r6g.large` | Yes |
 | `storm-catalog` | catalog | `db.r6g.large` | Yes |
 | `storm-inventory` | inventory | `db.r6g.xlarge` | Yes |
-| `storm-order` | order, payment, wishlist (small DBs co-located) | `db.r6g.large` | Yes |
+| `storm-order` | order | `db.r6g.large` | Yes |
+| `storm-payment` | payment | `db.r6g.large` | Yes |
+| `storm-wishlist` | wishlist | `db.r6g.medium` | Yes |
 | `storm-media` | media | `db.r6g.medium` | Yes |
 
 | Concern | Setting |
@@ -130,7 +132,7 @@ Application services (EKS pods)
 | IAM | One role per service; IRSA (IAM Roles for Service Accounts) — no shared keys |
 | Secrets | AWS Secrets Manager + External Secrets Operator |
 | Encryption at rest | KMS on RDS, EBS, S3, OpenSearch, MSK |
-| Encryption in transit | TLS everywhere; mTLS inside mesh |
+| Encryption in transit | TLS everywhere; mTLS inside Linkerd mesh |
 | VPC Flow Logs | Enabled to S3 |
 | GuardDuty | Enabled |
 | Config | Enabled with compliance rules |

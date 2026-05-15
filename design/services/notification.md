@@ -35,13 +35,15 @@ None.
 | Order.StatusChanged.v1 | Status update email/SMS |
 | Order.Failed.v1 | Payment failure notification |
 | Order.Cancelled.v1 | Cancellation email |
-| (OTP triggers, dispatched directly from identity-service via internal RPC) | OTP SMS |
+| User.OtpRequested.v1 | OTP SMS via Twilio (sole Twilio integration point) |
+| User.EmailVerificationRequested.v1 | Verification email via SES |
+| User.PasswordResetRequested.v1 | Password reset email |
 
 ## Dependencies
 - AWS SES (email)
 - Twilio (SMS, DLT-compliant templates for India)
 
 ## Notes
-- Each event consumer deduplicates by `eventId` + `templateId` (so a re-emitted event doesn't double-send)
+- Each event consumer deduplicates by `eventId` (matches generic dedup contract)
 - Failures retry with exponential backoff (3 attempts) → DLQ topic on persistent failure
 - Templates versioned; admin can preview and adjust

@@ -44,14 +44,16 @@
 | User.Blocked.v1 | Admin blocks user |
 | User.Unblocked.v1 | Admin unblocks user |
 | User.PasswordChanged.v1 | Password updated |
+| User.OtpRequested.v1 | Mobile OTP requested (consumed by notification-service) |
+| User.EmailVerificationRequested.v1 | Verification email needed |
+| User.PasswordResetRequested.v1 | Reset email needed |
 
 ## Events Consumed
 None.
 
 ## Dependencies
-- Twilio (SMS OTP)
-- AWS SES (email — via notification-service in practice)
-- Google OAuth
+- notification-service (via events) — for all email + SMS dispatch
+- Google OAuth (direct)
 
 ## References
 - [docs/authentication.md](../../docs/authentication.md) — full auth model

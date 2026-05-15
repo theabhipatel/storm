@@ -10,7 +10,7 @@
 catalog-service (Postgres)
         │ outbox
         ▼
-Kafka (product.* topics)
+Kafka (Product.*.v1, Category.*.v1, Brand.*.v1)
         │
         ▼
 search-service consumer

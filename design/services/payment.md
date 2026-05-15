@@ -30,7 +30,11 @@
 | Payment.Failed.v1 | Webhook `payment.failed` verified, or order expired |
 
 ## Events Consumed
-None.
+
+| Event | Action |
+|---|---|
+| Order.Cancelled.v1 | If payment was captured, initiate Razorpay refund (Stage 2 refund flow) |
+| Order.Failed.v1 (post-TTL capture) | Same — initiate refund for orders failed after capture |
 
 ## Dependencies
 - Razorpay API + webhooks

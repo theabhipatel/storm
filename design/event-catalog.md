@@ -4,7 +4,7 @@
 
 All events follow the standard envelope from [docs/event-driven-architecture.md](../docs/event-driven-architecture.md): `eventId`, `eventType`, `occurredAt`, `producer`, `traceId`, `data`.
 
-Topic naming: `<aggregate>.<event>.v<N>` (e.g., `order.placed.v1`).
+Topic naming: `<Aggregate>.<Event>.v<N>`, PascalCase, past tense (e.g., `Order.Confirmed.v1`).
 
 ---
 
@@ -83,7 +83,7 @@ Topic naming: `<aggregate>.<event>.v<N>` (e.g., `order.placed.v1`).
 
 | Concern | Convention |
 |---|---|
-| Topic name | `<aggregate>.<event>.v<N>` |
+| Topic name | `<Aggregate>.<Event>.v<N>` (PascalCase, past tense) |
 | Partition key | Aggregate ID (orderId, userId, productId, etc.) |
 | Schema location | `packages/contracts/events` (Stage 1) → schema registry (later) |
 | Delivery | At-least-once; consumers idempotent on `eventId` |

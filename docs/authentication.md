@@ -147,9 +147,10 @@ Mechanism: a per-user integer counter in the fast KV store. Every JWT carries th
 | Property | Detail |
 |---|---|
 | Storage | KV store (Redis or equivalent), one key per user |
-| Check cost | One KV lookup per request — added to existing gateway latency |
-| Mass-invalidation | Increment the counter → every outstanding access token for the user becomes invalid on its next request |
-| Propagation | Within one round-trip (~next API call) |
+| Gateway check | Local in-process cache (per-user, ~30s TTL) backed by KV; refreshed on miss |
+| Invalidation propagation | KV publish/subscribe channel — gateway nodes drop local cache entries on increment, so updates are pushed, not polled |
+| Check cost | Cache hit ~sub-ms (zero network); cache miss ~1 KV lookup |
+| Mass-invalidation | Increment the counter → all outstanding access tokens invalidated within the cache TTL (worst case 30 s) and immediately on cache-aware gateway nodes |
 | Effect on refresh | Refresh tokens are deleted alongside, so the user cannot recover access |
 
 ### When to increment

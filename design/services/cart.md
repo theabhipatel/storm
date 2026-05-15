@@ -3,8 +3,8 @@
 **Purpose:** Per-user shopping cart with low-latency reads and writes.
 
 ## Storage
-- Redis (primary): cart state per user
-- Postgres (durability): periodic snapshot + on-write replication for recovery
+- Redis with **AOF + RDB persistence** (cluster mode, replicated across AZs) — sole store
+- No dual-write to Postgres. Carts are best-effort; durability comes from Redis persistence and replicas, not a second store.
 
 ## Owned Entities
 

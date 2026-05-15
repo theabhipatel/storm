@@ -22,8 +22,16 @@ None.
 | GET | /wishlist | Wishlist with product details (wishlist + catalog + inventory) |
 | GET | /me | User profile (identity) |
 
-## Events Produced / Consumed
+## Events Produced
 None.
+
+## Events Consumed (for cache invalidation only)
+
+| Event | Action |
+|---|---|
+| Product.Updated.v1 / Deleted.v1 | Drop cached product detail and listings containing that product |
+| Category.Updated.v1 | Drop cached category listings |
+| Brand.Updated.v1 | Drop cached brand listings |
 
 ## Dependencies
 - identity, catalog, search, cart, inventory, wishlist, order, recommendation, media
@@ -32,4 +40,13 @@ None.
 - All downstream calls in parallel where possible
 - Per-page response shape; never expose raw microservice responses
 - 1–2 s total response budget per page
-- Caches only short-TTL (5–30s) Redis cache for hot pages (home, popular products)
+
+## Caching
+
+| Concern | Convention |
+|---|---|
+| Pattern | Cache-aside in Redis |
+| Key naming | `web-bff:<page>:<entity>:<id>:<version>` (versioned to enable bulk invalidation) |
+| TTL | 30 s for home/listing pages; 5 min for product detail composites; no cache for cart, checkout, orders |
+| Invalidation | TTL primary; event-driven secondary — consumes `Product.Updated`, `Product.Deleted`, `Category.Updated`, `Brand.Updated` to drop affected keys |
+| Stampede protection | Single-flight on home and category endpoints |

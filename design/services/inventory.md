@@ -37,7 +37,9 @@
 
 | Event | Action |
 |---|---|
-| Order.Confirmed.v1 | Confirm matching reservation (permanent decrement) |
+| Order.Confirmed.v1 | Confirm reservation → permanent decrement |
+| Order.Failed.v1 | Release reservation (compensation) |
+| Order.Cancelled.v1 | Restock the items (reverse the decrement) |
 
 ## Dependencies
 None.

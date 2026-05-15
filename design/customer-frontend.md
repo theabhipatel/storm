@@ -41,11 +41,14 @@
 
 | Concern | Where |
 |---|---|
-| Server components | Direct `fetch()` to web-bff endpoints; never go through Redux |
+| Server components (public pages) | Direct `fetch()` to web-bff endpoints. No user identity needed for `/`, `/c/*`, `/p/*` — these render the same for everyone. |
+| Server components (authenticated pages) | **Not used.** Any page that needs user identity is a Client Component. Avoids the SSR token-propagation problem. |
 | Client components | RTK Query hooks via web-bff |
 | Auth state | In-memory access token + httpOnly refresh cookie ([docs/authentication.md](../docs/authentication.md)) |
 | Multi-step checkout draft | `createSlice` (no server state until order placed) |
 | UI state (drawer, modal, theme) | `createSlice` |
+
+**Rule:** SSR is for SEO-public pages only. If a page needs `userId` to render, it must be a Client Component that fetches after mount — never SSR with credential forwarding.
 
 ---
 
