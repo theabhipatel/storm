@@ -13,9 +13,16 @@ Topic naming: `<Aggregate>.<Event>.v<N>`, PascalCase, past tense (e.g., `Order.C
 | Event | Producer | Consumers | Payload (`data`) |
 |---|---|---|---|
 | `User.Created.v1` | identity-service | notification-service (welcome email) | userId, email, name, createdAt |
-| `User.Blocked.v1` | identity-service | (audit) | userId, reason, blockedBy |
-| `User.Unblocked.v1` | identity-service | (audit) | userId, unblockedBy |
+| `User.Blocked.v1` | identity-service | notification-service | userId, reason, blockedBy |
+| `User.Unblocked.v1` | identity-service | notification-service | userId, unblockedBy |
 | `User.PasswordChanged.v1` | identity-service | notification-service | userId, changedAt |
+| `User.OtpRequested.v1` | identity-service | notification-service (SMS via Twilio) | userId, mobile, otpCode |
+| `User.EmailVerificationRequested.v1` | identity-service | notification-service | userId, email, token |
+| `User.PasswordResetRequested.v1` | identity-service | notification-service | userId, email, token |
+| `User.NewDeviceLogin.v1` | identity-service | notification-service | userId, deviceInfo, ip, loginAt |
+| `User.EmailChanged.v1` | identity-service | notification-service | userId, oldEmail, newEmail |
+| `User.MobileChanged.v1` | identity-service | notification-service | userId, newMobile |
+| `User.Deleted.v1` | identity-service | notification-service | userId, deletedAt |
 
 ---
 
@@ -23,8 +30,10 @@ Topic naming: `<Aggregate>.<Event>.v<N>`, PascalCase, past tense (e.g., `Order.C
 
 | Event | Producer | Consumers | Payload (`data`) |
 |---|---|---|---|
-| `Product.Created.v1` | catalog-service | search-service, recommendation-service | productId, sku, name, basePrice, categoryId, brandId, attributes |
+| `Product.Created.v1` | catalog-service | search-service, recommendation-service | productId, sku, name, basePrice, categoryId, brandId, attributes, status |
 | `Product.Updated.v1` | catalog-service | search-service, cart-service (price refresh), recommendation-service | productId + changed fields |
+| `Product.Published.v1` | catalog-service | search-service (index doc), recommendation-service | productId |
+| `Product.Archived.v1` | catalog-service | search-service (remove doc), cart-service, wishlist-service, recommendation-service | productId |
 | `Product.Deleted.v1` | catalog-service | search-service, cart-service, wishlist-service, recommendation-service | productId |
 | `Category.Created.v1` / `Updated.v1` | catalog-service | search-service | categoryId, name, parentId |
 | `Brand.Created.v1` / `Updated.v1` | catalog-service | search-service | brandId, name |

@@ -104,7 +104,8 @@ Services to create: `identity`, `catalog`, `search`, `inventory`, `cart`, `order
   - Same Redux + axios stub
 
 ### Local infrastructure (`docker-compose.yml` at repo root)
-- Postgres 16 — one container, init script creates 7 separate databases: `identity`, `catalog`, `inventory`, `order`, `payment`, `wishlist`, `media`
+- Postgres 16 — one container, init script creates 7 separate databases with separate users + grants (least-privilege): `identity`, `catalog`, `inventory`, `order`, `payment`, `wishlist`, `media`
+- MongoDB init creates database `notification` for notification-service logs
 - Redis 7 (single node, AOF + RDB persistence enabled)
 - Redpanda (Kafka-compatible, simpler than Kafka + Zookeeper) + Schema Registry
 - OpenSearch 2.x (single node, security disabled for local)
