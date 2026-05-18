@@ -1,5 +1,4 @@
-// Identity service Prisma schema.
-// Entities are added on Day 2 (users, OTP records, refresh tokens, sessions).
+// identity-service Prisma schema.
 
 generator client {
   provider = "prisma-client-js"
@@ -8,4 +7,69 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  customer
+  admin
+}
+
+model User {
+  id             String         @id @db.Uuid
+  email          String         @unique
+  passwordHash   String?        @map("password_hash")
+  name           String
+  mobile         String?
+  mobileVerified Boolean        @default(false) @map("mobile_verified")
+  emailVerified  Boolean        @default(false) @map("email_verified")
+  role           UserRole       @default(customer)
+  blocked        Boolean        @default(false)
+  tokenVersion   Int            @default(0) @map("token_version")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  deletedAt      DateTime?      @map("deleted_at")
+
+  oauthAccounts  OAuthAccount[]
+
+  @@index([email])
+  @@map("users")
+}
+
+model OAuthAccount {
+  id             String   @id @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  provider       String
+  providerUserId String   @map("provider_user_id")
+  linkedAt       DateTime @default(now()) @map("linked_at")
+
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@index([userId])
+  @@map("oauth_accounts")
+}
+
+model AuditLog {
+  id        String   @id @db.Uuid
+  actorId   String?  @map("actor_id") @db.Uuid
+  subjectId String?  @map("subject_id") @db.Uuid
+  action    String
+  metadata  Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([subjectId])
+  @@index([createdAt])
+  @@map("audit_log")
+}
+
+model Outbox {
+  id            String    @id @db.Uuid
+  aggregateId   String    @map("aggregate_id") @db.Uuid
+  eventType     String    @map("event_type")
+  payload       Json
+  createdAt     DateTime  @default(now()) @map("created_at")
+  publishedAt   DateTime? @map("published_at")
+
+  @@index([publishedAt, createdAt])
+  @@map("outbox")
 }

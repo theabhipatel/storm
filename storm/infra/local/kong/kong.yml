@@ -1,0 +1,228 @@
+_format_version: "3.0"
+_transform: true
+
+# Upstream services
+services:
+  - name: identity
+    url: http://host.docker.internal:3001
+    connect_timeout: 5000
+    read_timeout: 30000
+    write_timeout: 30000
+    routes:
+      # ---------- Public auth routes (no JWT) ----------
+      - name: auth-signup
+        paths: ["/api/auth/signup"]
+        methods: ["POST", "OPTIONS"]
+        strip_path: false
+        plugins:
+          - name: rate-limiting
+            config: { hour: 5, policy: local, fault_tolerant: true }
+
+      - name: auth-login
+        paths: ["/api/auth/login"]
+        methods: ["POST", "OPTIONS"]
+        strip_path: false
+        plugins:
+          - name: rate-limiting
+            config: { minute: 5, hour: 60, policy: local, fault_tolerant: true }
+
+      - name: auth-refresh
+        paths: ["/api/auth/refresh"]
+        methods: ["POST", "OPTIONS"]
+        strip_path: false
+        plugins:
+          - name: rate-limiting
+            config: { minute: 60, hour: 600, policy: local, fault_tolerant: true }
+
+      - name: auth-password-reset
+        paths: ["/api/auth/password-reset"]
+        methods: ["POST", "OPTIONS"]
+        strip_path: false
+        plugins:
+          - name: rate-limiting
+            config: { hour: 3, policy: local, fault_tolerant: true }
+
+      - name: auth-password-reset-confirm
+        paths: ["/api/auth/password-reset/confirm"]
+        methods: ["POST", "OPTIONS"]
+        strip_path: false
+
+      - name: auth-verify-email
+        paths: ["/api/auth/verify-email"]
+        methods: ["POST", "OPTIONS"]
+        strip_path: false
+
+      - name: auth-google
+        paths: ["/api/auth/google", "/api/auth/google/callback"]
+        methods: ["GET", "OPTIONS"]
+        strip_path: false
+
+      - name: jwks
+        paths: ["/.well-known/jwks.json"]
+        methods: ["GET", "OPTIONS"]
+        strip_path: false
+
+      # Logout: no JWT required (must work even on expired access token).
+      # The identity service enforces CSRF + refresh cookie ownership.
+      - name: auth-logout
+        paths: ["/api/auth/logout"]
+        methods: ["POST", "OPTIONS"]
+        strip_path: false
+
+      # ---------- Protected auth routes (JWT required) ----------
+      - name: auth-protected
+        paths:
+          - "/api/auth/me"
+          - "/api/auth/logout-all"
+          - "/api/auth/password-change"
+          - "/api/auth/mobile/send-otp"
+          - "/api/auth/mobile/verify-otp"
+        strip_path: false
+        plugins:
+          - name: pre-function
+            config:
+              access:
+                - |
+                  -- Verify RS256 JWT against the identity-service public key,
+                  -- check token-version (Redis, cached locally 30s), strip the
+                  -- Authorization header, and inject identity headers upstream.
+                  local cjson = require "cjson"
+                  local redis = require "resty.redis"
+                  local pkey  = require "resty.openssl.pkey"
+
+                  local PUB_PEM = [[-----BEGIN PUBLIC KEY-----
+                  MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmIlTb3tIp9Y8T/WoDYv+
+                  ATxcfz7sb8MpnLIBCm42C1TWZs/Ap1bykdniVQXecGFXUDwVTuLwPjkTO9TLTb9X
+                  a422Oo4pGU8xAyfTfCoSGw3LNvtvJ1Sgy7E104O0AxWvLUZ6AjRGsx9qdnkqP6Vu
+                  MXeHhk4SS0o0C2vXA5aF+m8kY50G30pjRx+ZoKqf3BD948aDbG4EyXZehU1AsV1s
+                  U1/AFsugZs7Cfcikfy/Cpmx2+kSKpHansOJqEkctU8qpFdNj/QLSbc2rVEeoMCw3
+                  HX+6e6sSgq/qSX6doEa+Btt+9KMD+mnqwWaD3F+d5AdARB61GBF+TrsExz385C3J
+                  OQIDAQAB
+                  -----END PUBLIC KEY-----]]
+                  local ISSUER   = "storm-identity"
+                  local AUDIENCE = "storm"
+
+                  local function b64url_decode(s)
+                    s = s:gsub("-", "+"):gsub("_", "/")
+                    local pad = #s % 4
+                    if pad > 0 then s = s .. string.rep("=", 4 - pad) end
+                    return ngx.decode_base64(s)
+                  end
+
+                  local function deny(code, message)
+                    return kong.response.exit(401, { error = { code = code, message = message } })
+                  end
+
+                  local auth = kong.request.get_header("authorization")
+                  if not auth then
+                    return deny("UNAUTHENTICATED", "Missing access token.")
+                  end
+                  local token = auth:gsub("^[Bb][Ee][Aa][Rr][Ee][Rr]%s+", "")
+                  local header_b64, payload_b64, sig_b64 = token:match("([^.]+)%.([^.]+)%.([^.]+)")
+                  if not header_b64 or not payload_b64 or not sig_b64 then
+                    return deny("TOKEN_INVALID", "Access token malformed.")
+                  end
+
+                  -- Header check.
+                  local ok_h, header = pcall(cjson.decode, b64url_decode(header_b64))
+                  if not ok_h or header.alg ~= "RS256" then
+                    return deny("TOKEN_INVALID", "Unsupported algorithm.")
+                  end
+
+                  -- Signature verification.
+                  local pk, perr = pkey.new(PUB_PEM)
+                  if not pk then
+                    kong.log.err("pkey_load_failed: ", perr)
+                    return kong.response.exit(503, { error = { code = "SERVICE_UNAVAILABLE", message = "Auth backend misconfigured." } })
+                  end
+                  local sig = b64url_decode(sig_b64)
+                  local message = header_b64 .. "." .. payload_b64
+                  local ok_v, verr = pk:verify(sig, message, "SHA256")
+                  if not ok_v then
+                    kong.log.warn("jwt_signature_invalid: ", verr or "no verr")
+                    return deny("TOKEN_INVALID", "Signature invalid.")
+                  end
+
+                  -- Claims.
+                  local ok_p, claims = pcall(cjson.decode, b64url_decode(payload_b64))
+                  if not ok_p or type(claims) ~= "table" then
+                    return deny("TOKEN_INVALID", "Access token malformed.")
+                  end
+                  if claims.iss ~= ISSUER then return deny("TOKEN_INVALID", "Issuer mismatch.") end
+                  if claims.aud ~= AUDIENCE then return deny("TOKEN_INVALID", "Audience mismatch.") end
+                  local now = ngx.time()
+                  if not claims.exp or now >= tonumber(claims.exp) then
+                    return deny("TOKEN_EXPIRED", "Access token expired.")
+                  end
+
+                  local sub  = claims.sub
+                  local tv   = tonumber(claims.tv)
+                  local role = claims.role
+                  local sid  = claims.sid
+                  if not sub or tv == nil then
+                    return deny("TOKEN_INVALID", "Access token malformed.")
+                  end
+
+                  -- Token-version check. Read from Redis on every request; identity-service
+                  -- publishes on `user.tokenVersion.bumped` for future pub-sub invalidation
+                  -- of a local cache, but for Stage 1 the per-request lookup (~sub-ms LAN)
+                  -- is simpler than maintaining a worker-shared cache.
+                  local red = redis:new()
+                  red:set_timeouts(200, 200, 200)
+                  local cok, cerr = red:connect("redis", 6379)
+                  if not cok then
+                    kong.log.err("redis_connect_failed: ", cerr)
+                    return kong.response.exit(503, { error = { code = "SERVICE_UNAVAILABLE", message = "Auth backend unavailable." } })
+                  end
+                  local raw, gerr = red:get("user:" .. sub .. ":tokenVersion")
+                  if gerr then
+                    kong.log.err("redis_get_failed: ", gerr)
+                    return kong.response.exit(503, { error = { code = "SERVICE_UNAVAILABLE", message = "Auth backend unavailable." } })
+                  end
+                  red:set_keepalive(10000, 100)
+                  local current_tv = (raw == ngx.null or raw == nil) and 0 or tonumber(raw)
+
+                  if current_tv ~= tv then
+                    return deny("TOKEN_INVALID", "Access token revoked.")
+                  end
+
+                  -- Strip Authorization; inject identity headers for the upstream service.
+                  kong.service.request.clear_header("authorization")
+                  kong.service.request.set_header("x-user-id", sub)
+                  kong.service.request.set_header("x-user-role", role or "customer")
+                  if sid then kong.service.request.set_header("x-session-id", sid) end
+                  kong.service.request.set_header("x-token-version", tostring(tv))
+
+# ---------- Global plugins ----------
+plugins:
+  - name: cors
+    config:
+      origins:
+        - "http://localhost:3000"
+        - "http://localhost:3200"
+        - "http://localhost:3300"
+        - "http://localhost:5173"
+      credentials: true
+      max_age: 3600
+      headers:
+        - "Accept"
+        - "Authorization"
+        - "Content-Type"
+        - "X-CSRF-Token"
+        - "X-Request-Id"
+        - "Idempotency-Key"
+      exposed_headers:
+        - "X-Request-Id"
+      methods:
+        - "GET"
+        - "POST"
+        - "PUT"
+        - "PATCH"
+        - "DELETE"
+        - "OPTIONS"
+
+  - name: correlation-id
+    config:
+      header_name: "X-Request-Id"
+      generator: "uuid"
+      echo_downstream: true

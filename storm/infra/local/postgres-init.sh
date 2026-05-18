@@ -18,7 +18,7 @@ for entry in "${SERVICES[@]}"; do
   IFS='|' read -r DB USER PASS <<<"$entry"
   echo "==> Creating database '$DB' with user '$USER'"
   psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "postgres" <<-EOSQL
-    CREATE USER "$USER" WITH PASSWORD '$PASS';
+    CREATE USER "$USER" WITH PASSWORD '$PASS' CREATEDB;
     CREATE DATABASE "$DB" OWNER "$USER";
     REVOKE ALL ON DATABASE "$DB" FROM PUBLIC;
     GRANT CONNECT, TEMPORARY ON DATABASE "$DB" TO "$USER";

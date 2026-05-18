@@ -1,7 +1,10 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { createApi } from "@reduxjs/toolkit/query/react";
+
+import { axiosBaseQuery } from "../lib/baseQuery";
 
 export const apiSlice = createApi({
   reducerPath: "api",
-  baseQuery: fetchBaseQuery({ baseUrl: import.meta.env["VITE_API_BASE_URL"] ?? "/api" }),
+  baseQuery: axiosBaseQuery,
+  tagTypes: ["CurrentUser"],
   endpoints: () => ({}),
 });

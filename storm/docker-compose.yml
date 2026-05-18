@@ -147,6 +147,37 @@ services:
     container_name: storm-mailhog
     ports: ["1025:1025", "8025:8025"]
 
+  kong:
+    image: kong:3.7
+    container_name: storm-kong
+    depends_on: [redis]
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /etc/kong/kong.yml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      KONG_PROXY_LISTEN: 0.0.0.0:8000
+      KONG_LOG_LEVEL: debug
+      KONG_PLUGINS: bundled
+      KONG_UNTRUSTED_LUA: sandbox
+      # Allow our pre-function plugin to require these libs (all shipped with Kong).
+      KONG_UNTRUSTED_LUA_SANDBOX_REQUIRES: "resty.redis,cjson,resty.openssl.pkey"
+    volumes:
+      - ./infra/local/kong:/etc/kong:ro
+    ports:
+      - "8000:8000"   # proxy (public)
+      - "8001:8001"   # admin (local only)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   pgadmin:
     image: dpage/pgadmin4:8.12
     container_name: storm-pgadmin

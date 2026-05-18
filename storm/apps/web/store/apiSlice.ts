@@ -1,13 +1,12 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { createApi } from "@reduxjs/toolkit/query/react";
 
-/**
- * RTK Query base slice. Endpoints are injected per-feature with
- * apiSlice.injectEndpoints() — keeps feature concerns separated.
- */
+import { axiosBaseQuery } from "../lib/baseQuery";
+
+// Root RTK Query slice. Endpoints are injected per-feature with
+// apiSlice.injectEndpoints() so feature concerns stay separated.
 export const apiSlice = createApi({
   reducerPath: "api",
-  baseQuery: fetchBaseQuery({
-    baseUrl: process.env["NEXT_PUBLIC_API_BASE_URL"] ?? "/api",
-  }),
+  baseQuery: axiosBaseQuery,
+  tagTypes: ["CurrentUser"],
   endpoints: () => ({}),
 });

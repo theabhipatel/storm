@@ -1,4 +1,7 @@
+import cookieParser from "cookie-parser";
 import express, { type Express } from "express";
+import type { PrismaClient } from "@prisma/client";
+import type { Redis } from "ioredis";
 import {
   requestContext,
   requestLogger,
@@ -8,18 +11,32 @@ import {
 } from "@storm/middlewares";
 import type { Logger } from "@storm/logger";
 
+import type { KeySet } from "./auth/keys.js";
+import type { Config } from "./config.js";
 import { SERVICE_NAME } from "./config.js";
+import { authRouter } from "./routes/auth.js";
+import { jwksRouter } from "./routes/jwks.js";
 
 export interface ReadyChecks {
   [name: string]: () => Promise<boolean>;
 }
 
-export function createServer(opts: { logger: Logger; readyChecks?: ReadyChecks }): Express {
+export interface CreateServerOptions {
+  logger: Logger;
+  config: Config;
+  prisma: PrismaClient;
+  redis: Redis;
+  keys: KeySet;
+  readyChecks?: ReadyChecks;
+}
+
+export function createServer(opts: CreateServerOptions): Express {
   const app = express();
-  const { logger, readyChecks = {} } = opts;
+  const { logger, config, prisma, redis, keys, readyChecks = {} } = opts;
 
   app.disable("x-powered-by");
   app.use(express.json({ limit: "1mb" }));
+  app.use(cookieParser());
   app.use(requestContext());
   app.use(requestLogger(logger));
   app.use(authContext());
@@ -47,6 +64,9 @@ export function createServer(opts: { logger: Logger; readyChecks?: ReadyChecks }
       res.status(503).json({ status: "not_ready", checks: results });
     }
   });
+
+  app.use(jwksRouter(keys));
+  app.use(authRouter({ prisma, redis, config, keys, logger }));
 
   // routes/handlers go here as endpoints come online
 
