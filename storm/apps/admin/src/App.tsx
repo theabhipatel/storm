@@ -6,6 +6,8 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { LoginPage } from "./pages/LoginPage";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
+import { UserDetailPage } from "./pages/UserDetailPage";
+import { UsersListPage } from "./pages/UsersListPage";
 
 function RequireAdmin({ children }: { children: ReactNode }) {
   const bootstrapped = useAuthBootstrapped();
@@ -50,6 +52,22 @@ export function App() {
         element={
           <RequireAdmin>
             <DashboardPage />
+          </RequireAdmin>
+        }
+      />
+      <Route
+        path="/users"
+        element={
+          <RequireAdmin>
+            <UsersListPage />
+          </RequireAdmin>
+        }
+      />
+      <Route
+        path="/users/:id"
+        element={
+          <RequireAdmin>
+            <UserDetailPage />
           </RequireAdmin>
         }
       />

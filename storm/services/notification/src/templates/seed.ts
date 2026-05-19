@@ -70,9 +70,71 @@ export const TEMPLATE_SEED: ReadonlyArray<Omit<TemplateRow, "createdAt">> = [
     locale: "en-IN",
     subject: "Your Storm account has been blocked",
     htmlBody:
-      "<p>Hi,</p><p>Your Storm account has been blocked.{{#if reason}} Reason: {{reason}}.{{/if}} Contact support if you think this is a mistake.</p>",
+      "<p>Hi {{name}},</p><p>Your Storm account has been blocked.{{#if reason}} Reason: {{reason}}.{{/if}} Contact support if you think this is a mistake.</p>",
     textBody:
-      "Hi,\n\nYour Storm account has been blocked.{{#if reason}} Reason: {{reason}}.{{/if}} Contact support if you think this is a mistake.",
+      "Hi {{name}},\n\nYour Storm account has been blocked.{{#if reason}} Reason: {{reason}}.{{/if}} Contact support if you think this is a mistake.",
+    version: 2,
+  },
+  {
+    _id: "account-unblocked",
+    channel: "email",
+    locale: "en-IN",
+    subject: "Your Storm account has been reinstated",
+    htmlBody:
+      "<p>Hi {{name}},</p><p>Your Storm account has been unblocked. Please sign in again to continue.</p>",
+    textBody:
+      "Hi {{name}},\n\nYour Storm account has been unblocked. Please sign in again to continue.",
+    version: 1,
+  },
+  {
+    _id: "email-change-verification",
+    channel: "email",
+    locale: "en-IN",
+    subject: "Confirm your new Storm email",
+    htmlBody:
+      "<p>Hi {{name}},</p><p>Confirm the change of your Storm email to <strong>{{newEmail}}</strong> by clicking <a href=\"{{verifyUrl}}\">this link</a>. It expires on {{expiresAt}}.</p>",
+    textBody:
+      "Hi {{name}},\n\nConfirm the change of your Storm email to {{newEmail}}:\n{{verifyUrl}}\nExpires: {{expiresAt}}",
+    version: 1,
+  },
+  {
+    _id: "email-changed",
+    channel: "email",
+    locale: "en-IN",
+    subject: "Your Storm email was changed",
+    htmlBody:
+      "<p>Hi {{name}},</p><p>Your Storm account email was changed from {{oldEmail}} to {{newEmail}}. If this wasn't you, contact support immediately.</p>",
+    textBody:
+      "Hi {{name}},\n\nYour Storm account email was changed from {{oldEmail}} to {{newEmail}}.\nIf this wasn't you, contact support immediately.",
+    version: 1,
+  },
+  {
+    _id: "mobile-change-otp",
+    channel: "sms",
+    locale: "en-IN",
+    smsBody: "Your Storm verification OTP is {{otp}}. Valid for 5 minutes. Do not share it.",
+    version: 1,
+  },
+  {
+    _id: "mobile-changed",
+    channel: "email",
+    locale: "en-IN",
+    subject: "Your Storm mobile number was changed",
+    htmlBody:
+      "<p>Hi {{name}},</p><p>Your Storm mobile was updated to {{newMobile}}. If this wasn't you, contact support immediately.</p>",
+    textBody:
+      "Hi {{name}},\n\nYour Storm mobile was updated to {{newMobile}}.\nIf this wasn't you, contact support immediately.",
+    version: 1,
+  },
+  {
+    _id: "account-deleted",
+    channel: "email",
+    locale: "en-IN",
+    subject: "Your Storm account has been deleted",
+    htmlBody:
+      "<p>Hi {{name}},</p><p>Your Storm account was deleted on {{deletedAt}}. We're sorry to see you go.</p>",
+    textBody:
+      "Hi {{name}},\n\nYour Storm account was deleted on {{deletedAt}}. We're sorry to see you go.",
     version: 1,
   },
 ];

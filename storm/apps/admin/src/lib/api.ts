@@ -17,20 +17,18 @@ api.interceptors.request.use((config) => {
   if (token && !config.headers["Authorization"]) {
     config.headers["Authorization"] = `Bearer ${token}`;
   }
-  if (typeof document !== "undefined" && needsCsrf(config.url)) {
+  if (typeof document !== "undefined" && needsCsrf(config.method, config.url)) {
     const csrf = readCookie("csrf_token");
     if (csrf) config.headers["X-CSRF-Token"] = csrf;
   }
   return config;
 });
 
-function needsCsrf(url: string | undefined): boolean {
+function needsCsrf(method: string | undefined, url: string | undefined): boolean {
   if (!url) return false;
-  return (
-    url.includes("/api/auth/refresh") ||
-    url.includes("/api/auth/logout") ||
-    url.includes("/api/auth/password-change")
-  );
+  const m = (method ?? "get").toLowerCase();
+  if (m === "get" || m === "head" || m === "options") return false;
+  return url.startsWith("/api/");
 }
 
 function readCookie(name: string): string | null {

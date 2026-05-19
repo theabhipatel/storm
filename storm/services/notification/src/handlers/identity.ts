@@ -8,6 +8,12 @@ import {
   UserPasswordChangedPayload,
   UserPasswordResetRequestedPayload,
   UserBlockedPayload,
+  UserUnblockedPayload,
+  UserEmailChangeRequestedPayload,
+  UserEmailChangedPayload,
+  UserMobileChangeRequestedPayload,
+  UserMobileChangedPayload,
+  UserDeletedPayload,
 } from "@storm/contracts";
 
 import type { Config } from "../config.js";
@@ -120,12 +126,106 @@ export const eventHandlers: Record<string, EventHandler> = {
 
   [IdentityEventTypes.UserBlocked]: async (env, deps) => {
     const payload = UserBlockedPayload.parse(env.payload);
-    // We don't have the user's email here yet (Day 3 will add it to the event);
-    // for now, log and skip. notification log still records the attempt.
-    deps.logger.warn(
-      { eventId: env.eventId, userId: payload.userId },
-      "user_blocked_email_skipped_missing_email_payload",
+    const tpl = await renderEmail(deps.mongo.templates, "account-blocked", {
+      name: payload.name,
+      reason: payload.reason ?? "",
+    });
+    const result = await deps.email.send({ to: payload.email, ...tpl });
+    await logSend(deps, env, payload.userId, "email", "account-blocked", payload, result);
+  },
+
+  [IdentityEventTypes.UserUnblocked]: async (env, deps) => {
+    const payload = UserUnblockedPayload.parse(env.payload);
+    const tpl = await renderEmail(deps.mongo.templates, "account-unblocked", {
+      name: payload.name,
+    });
+    const result = await deps.email.send({ to: payload.email, ...tpl });
+    await logSend(deps, env, payload.userId, "email", "account-unblocked", payload, result);
+  },
+
+  [IdentityEventTypes.UserEmailChangeRequested]: async (env, deps) => {
+    const payload = UserEmailChangeRequestedPayload.parse(env.payload);
+    const verifyUrl = `${deps.config.webAppOrigin}/account/email/confirm?token=${encodeURIComponent(
+      payload.verificationToken,
+    )}`;
+    const tpl = await renderEmail(deps.mongo.templates, "email-change-verification", {
+      name: payload.name,
+      newEmail: payload.newEmail,
+      verifyUrl,
+      expiresAt: payload.expiresAt,
+    });
+    const result = await deps.email.send({ to: payload.newEmail, ...tpl });
+    await logSend(
+      deps,
+      env,
+      payload.userId,
+      "email",
+      "email-change-verification",
+      { newEmail: payload.newEmail },
+      result,
     );
+  },
+
+  [IdentityEventTypes.UserEmailChanged]: async (env, deps) => {
+    const payload = UserEmailChangedPayload.parse(env.payload);
+    const tpl = await renderEmail(deps.mongo.templates, "email-changed", {
+      name: payload.name,
+      oldEmail: payload.oldEmail,
+      newEmail: payload.newEmail,
+    });
+    // Notify both the old and new email addresses.
+    const [oldResult, newResult] = await Promise.all([
+      deps.email.send({ to: payload.oldEmail, ...tpl }),
+      deps.email.send({ to: payload.newEmail, ...tpl }),
+    ]);
+    await logSend(
+      deps,
+      env,
+      payload.userId,
+      "email",
+      "email-changed",
+      payload,
+      { old: oldResult, new: newResult },
+    );
+  },
+
+  [IdentityEventTypes.UserMobileChangeRequested]: async (env, deps) => {
+    const payload = UserMobileChangeRequestedPayload.parse(env.payload);
+    const tpl = await renderSms(deps.mongo.templates, "mobile-change-otp", {
+      otp: payload.otp,
+    });
+    // SMS provider takes E.164; UI submits 10-digit Indian numbers, so prepend +91.
+    const to = payload.newMobile.startsWith("+") ? payload.newMobile : `+91${payload.newMobile}`;
+    const result = await deps.sms.send({ to, body: tpl.body });
+    await logSend(
+      deps,
+      env,
+      payload.userId,
+      "sms",
+      "mobile-change-otp",
+      { newMobile: payload.newMobile },
+      result,
+    );
+  },
+
+  [IdentityEventTypes.UserMobileChanged]: async (env, deps) => {
+    const payload = UserMobileChangedPayload.parse(env.payload);
+    const tpl = await renderEmail(deps.mongo.templates, "mobile-changed", {
+      name: payload.name,
+      newMobile: payload.newMobile,
+    });
+    const result = await deps.email.send({ to: payload.email, ...tpl });
+    await logSend(deps, env, payload.userId, "email", "mobile-changed", payload, result);
+  },
+
+  [IdentityEventTypes.UserDeleted]: async (env, deps) => {
+    const payload = UserDeletedPayload.parse(env.payload);
+    const tpl = await renderEmail(deps.mongo.templates, "account-deleted", {
+      name: payload.name,
+      deletedAt: payload.deletedAt,
+    });
+    const result = await deps.email.send({ to: payload.email, ...tpl });
+    await logSend(deps, env, payload.userId, "email", "account-deleted", payload, result);
   },
 };
 

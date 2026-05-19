@@ -108,6 +108,22 @@ function readIdentityHeaders(req: import("express").Request): IdentifiedUser | n
   return { userId, role, sessionId, tokenVersion: Number.parseInt(tv, 10) || 0 };
 }
 
+export function requireAdmin(): RequestHandler {
+  return (req, _res, next) => {
+    if (!req.identity) return next(unauthenticated("Missing access token."));
+    if (req.identity.role !== "admin") {
+      return next(
+        new StormError({
+          code: ErrorCodes.FORBIDDEN,
+          message: "Admin role required.",
+          status: 403,
+        }),
+      );
+    }
+    return next();
+  };
+}
+
 function unauthenticated(message: string): StormError {
   return new StormError({ code: ErrorCodes.UNAUTHENTICATED, message, status: 401 });
 }
