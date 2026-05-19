@@ -5,6 +5,7 @@ import { z } from "zod";
 
 export * from "./catalog.js";
 export * from "./media.js";
+export * from "./search.js";
 
 export const HealthResponseSchema = z.object({
   status: z.literal("ok"),

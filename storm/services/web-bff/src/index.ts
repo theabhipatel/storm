@@ -2,6 +2,9 @@ import { createLogger } from "@storm/logger";
 
 import { loadConfig, SERVICE_NAME } from "./config.js";
 import { createServer } from "./server.js";
+import { disconnectRedis, getRedis } from "./infra/redis.js";
+import { createCache } from "./services/cache.js";
+import { createCacheInvalidator } from "./events/cacheInvalidator.js";
 
 async function main(): Promise<void> {
   const config = loadConfig();
@@ -11,7 +14,24 @@ async function main(): Promise<void> {
     pretty: config.nodeEnv !== "production",
   });
 
-  const app = createServer({ logger, config });
+  const redis = getRedis(config);
+  const cache = createCache({ redis, logger });
+
+  const invalidator = createCacheInvalidator({ config, cache, logger });
+  if (config.enableConsumer) {
+    invalidator.start().catch((err) => {
+      logger.error({ err }, "cache_invalidator_start_failed");
+    });
+  }
+
+  const app = createServer({
+    logger,
+    config,
+    cache,
+    readyChecks: {
+      redis: async () => (await redis.ping()) === "PONG",
+    },
+  });
 
   const server = app.listen(config.port, () => {
     logger.info({ port: config.port, env: config.nodeEnv }, "service_started");
@@ -19,11 +39,13 @@ async function main(): Promise<void> {
 
   const shutdown = (signal: string): void => {
     logger.info({ signal }, "shutdown_requested");
-    server.close((err) => {
+    server.close(async (err) => {
       if (err) {
         logger.error({ err }, "shutdown_failed");
         process.exit(1);
       }
+      await invalidator.stop().catch(() => undefined);
+      await disconnectRedis().catch(() => undefined);
       process.exit(0);
     });
   };

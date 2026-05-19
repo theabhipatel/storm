@@ -5,18 +5,34 @@ import {
   authContext,
   errorHandler,
   notFoundHandler,
+  idempotencyKey,
 } from "@storm/middlewares";
 import type { Logger } from "@storm/logger";
 
+import type { Config } from "./config.js";
 import { SERVICE_NAME } from "./config.js";
+import type { OpenSearchClient } from "./infra/opensearch.js";
+import { searchService } from "./services/searchService.js";
+import { reindexService } from "./services/reindexService.js";
+import { catalogClient } from "./services/catalogClient.js";
+import { mediaClient } from "./services/mediaClient.js";
+import { searchRouter } from "./routes/search.js";
+import { adminRouter } from "./routes/admin.js";
 
 export interface ReadyChecks {
   [name: string]: () => Promise<boolean>;
 }
 
-export function createServer(opts: { logger: Logger; readyChecks?: ReadyChecks }): Express {
+export interface CreateServerOptions {
+  logger: Logger;
+  config: Config;
+  os: OpenSearchClient;
+  readyChecks?: ReadyChecks;
+}
+
+export function createServer(opts: CreateServerOptions): Express {
   const app = express();
-  const { logger, readyChecks = {} } = opts;
+  const { logger, config, os, readyChecks = {} } = opts;
 
   app.disable("x-powered-by");
   app.use(express.json({ limit: "1mb" }));
@@ -47,6 +63,18 @@ export function createServer(opts: { logger: Logger; readyChecks?: ReadyChecks }
       res.status(503).json({ status: "not_ready", checks: results });
     }
   });
+
+  const svc = searchService(os, config.productsIndexAlias);
+  app.use("/api", searchRouter(svc));
+
+  const reindex = reindexService({
+    os,
+    alias: config.productsIndexAlias,
+    catalog: catalogClient(config),
+    media: mediaClient(config),
+    logger,
+  });
+  app.use("/api", idempotencyKey({ required: true }), adminRouter(reindex));
 
   app.use(notFoundHandler());
   app.use(errorHandler(logger));

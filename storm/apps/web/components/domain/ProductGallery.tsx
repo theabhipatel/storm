@@ -19,6 +19,7 @@ export function ProductGallery({ assets }: { assets: MediaAssetDto[] }) {
   return (
     <div className="space-y-3">
       <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={heroUrl}
           alt={active.altText ?? ""}
@@ -42,6 +43,7 @@ export function ProductGallery({ assets }: { assets: MediaAssetDto[] }) {
                       : "border-neutral-200")
                   }
                 >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={thumbUrl}
                     alt={a.altText ?? ""}

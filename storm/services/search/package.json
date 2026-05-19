@@ -14,10 +14,13 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
+    "@opensearch-project/opensearch": "2.11.0",
     "@storm/contracts": "workspace:*",
     "@storm/logger": "workspace:*",
     "@storm/middlewares": "workspace:*",
     "express": "4.21.0",
+    "kafkajs": "2.2.4",
+    "uuidv7": "1.0.2",
     "zod": "3.23.8"
   },
   "devDependencies": {

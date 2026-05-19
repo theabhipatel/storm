@@ -10,8 +10,12 @@ import type { Logger } from "@storm/logger";
 
 import type { Config } from "./config.js";
 import { SERVICE_NAME } from "./config.js";
+import type { Cache } from "./services/cache.js";
 import { catalogReadRouter } from "./routes/catalog.js";
 import { productRouter } from "./routes/product.js";
+import { searchRouter } from "./routes/search.js";
+import { homeRouter } from "./routes/home.js";
+import { categoryRouter } from "./routes/category.js";
 
 export interface ReadyChecks {
   [name: string]: () => Promise<boolean>;
@@ -20,10 +24,11 @@ export interface ReadyChecks {
 export function createServer(opts: {
   logger: Logger;
   config: Config;
+  cache: Cache;
   readyChecks?: ReadyChecks;
 }): Express {
   const app = express();
-  const { logger, config, readyChecks = {} } = opts;
+  const { logger, config, cache, readyChecks = {} } = opts;
 
   app.disable("x-powered-by");
   app.use(express.json({ limit: "1mb" }));
@@ -57,6 +62,9 @@ export function createServer(opts: {
 
   app.use(productRouter(config));
   app.use(catalogReadRouter(config));
+  app.use(searchRouter(config));
+  app.use(categoryRouter(config));
+  app.use(homeRouter(config, cache));
 
   app.use(notFoundHandler());
   app.use(errorHandler(logger));
