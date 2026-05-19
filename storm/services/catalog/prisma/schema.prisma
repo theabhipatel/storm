@@ -1,11 +1,115 @@
-// catalog service Prisma schema.
-// Entities are added on the owning service's day.
+// catalog-service Prisma schema.
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../src/generated/client"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+enum ProductStatus {
+  draft
+  published
+  archived
+}
+
+model Category {
+  id        String    @id @db.Uuid
+  name      String
+  slug      String    @unique
+  parentId  String?   @map("parent_id") @db.Uuid
+  order     Int       @default(0)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  parent   Category?  @relation("CategoryToChildren", fields: [parentId], references: [id], onDelete: Restrict)
+  children Category[] @relation("CategoryToChildren")
+  products Product[]
+
+  @@index([parentId])
+  @@map("categories")
+}
+
+model Brand {
+  id        String   @id @db.Uuid
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  products Product[]
+
+  @@map("brands")
+}
+
+model Product {
+  id          String        @id @db.Uuid
+  sku         String        @unique
+  slug        String        @unique
+  name        String
+  description String        @default("")
+  brandId     String        @map("brand_id") @db.Uuid
+  categoryId  String        @map("category_id") @db.Uuid
+  basePrice   Int           @map("base_price")
+  currency    String        @default("INR")
+  status      ProductStatus @default(draft)
+  attributes  Json          @default("{}")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  publishedAt DateTime?     @map("published_at")
+
+  brand    Brand          @relation(fields: [brandId], references: [id], onDelete: Restrict)
+  category Category       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  variants Variant[]
+  media    ProductMedia[]
+
+  @@index([status])
+  @@index([categoryId])
+  @@index([brandId])
+  @@index([updatedAt])
+  @@map("products")
+}
+
+model Variant {
+  id         String @id @db.Uuid
+  productId  String @map("product_id") @db.Uuid
+  sku        String @unique
+  name       String
+  price      Int?
+  attributes Json   @default("{}")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("variants")
+}
+
+model ProductMedia {
+  productId String  @map("product_id") @db.Uuid
+  mediaId   String  @map("media_id") @db.Uuid
+  order     Int     @default(0)
+  isPrimary Boolean @default(false) @map("is_primary")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([productId, mediaId])
+  @@index([productId, order])
+  @@map("product_media")
+}
+
+model Outbox {
+  id          String    @id @db.Uuid
+  aggregateId String    @map("aggregate_id") @db.Uuid
+  eventType   String    @map("event_type")
+  payload     Json
+  createdAt   DateTime  @default(now()) @map("created_at")
+  publishedAt DateTime? @map("published_at")
+
+  @@index([publishedAt, createdAt])
+  @@map("outbox")
 }

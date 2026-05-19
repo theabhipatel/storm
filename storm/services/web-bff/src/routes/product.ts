@@ -1,0 +1,72 @@
+import { Router } from "express";
+import type { MediaAssetDto, ProductDetail } from "@storm/contracts";
+
+import type { Config } from "../config.js";
+import { catalogClient, type CategoryNode } from "../services/catalogClient.js";
+import { mediaClient } from "../services/mediaClient.js";
+
+export interface BreadcrumbItem {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+export interface ProductDetailResponse extends ProductDetail {
+  brand: { id: string; name: string; slug: string } | null;
+  category: { id: string; name: string; slug: string } | null;
+  breadcrumb: BreadcrumbItem[];
+  mediaAssets: MediaAssetDto[];
+}
+
+export function productRouter(config: Config): Router {
+  const router = Router();
+  const catalog = catalogClient(config);
+  const media = mediaClient(config);
+
+  router.get("/api/p/:slug", async (req, res, next) => {
+    try {
+      const product = await catalog.fetchProductBySlug(req.params.slug!);
+      const [tree, brands, assets] = await Promise.all([
+        catalog.fetchCategoryTree(),
+        catalog.fetchBrands(),
+        media.fetchBatch(product.media.map((m) => m.mediaId)),
+      ]);
+      const brand =
+        brands.find((b) => b.id === product.brandId) ?? null;
+      const { node: category, path } = locateCategory(tree, product.categoryId);
+      const response: ProductDetailResponse = {
+        ...product,
+        brand,
+        category: category
+          ? { id: category.id, name: category.name, slug: category.slug }
+          : null,
+        breadcrumb: path,
+        mediaAssets: assets,
+      };
+      res.json(response);
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  return router;
+}
+
+function locateCategory(
+  tree: CategoryNode[],
+  categoryId: string,
+): { node: CategoryNode | null; path: BreadcrumbItem[] } {
+  function walk(nodes: CategoryNode[], trail: BreadcrumbItem[]):
+    | { node: CategoryNode; path: BreadcrumbItem[] }
+    | null {
+    for (const n of nodes) {
+      const next = [...trail, { id: n.id, name: n.name, slug: n.slug }];
+      if (n.id === categoryId) return { node: n, path: next };
+      const found = walk(n.children, next);
+      if (found) return found;
+    }
+    return null;
+  }
+  const hit = walk(tree, []);
+  return hit ? { node: hit.node, path: hit.path } : { node: null, path: [] };
+}

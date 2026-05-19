@@ -2,6 +2,10 @@ import type { ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import { useAuthBootstrapped, useCurrentUser } from "./features/auth/auth.hooks";
+import { CatalogBrandsPage } from "./pages/CatalogBrandsPage";
+import { CatalogCategoriesPage } from "./pages/CatalogCategoriesPage";
+import { CatalogProductFormPage } from "./pages/CatalogProductFormPage";
+import { CatalogProductsListPage } from "./pages/CatalogProductsListPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -68,6 +72,46 @@ export function App() {
         element={
           <RequireAdmin>
             <UserDetailPage />
+          </RequireAdmin>
+        }
+      />
+      <Route
+        path="/catalog/products"
+        element={
+          <RequireAdmin>
+            <CatalogProductsListPage />
+          </RequireAdmin>
+        }
+      />
+      <Route
+        path="/catalog/products/new"
+        element={
+          <RequireAdmin>
+            <CatalogProductFormPage />
+          </RequireAdmin>
+        }
+      />
+      <Route
+        path="/catalog/products/:id"
+        element={
+          <RequireAdmin>
+            <CatalogProductFormPage />
+          </RequireAdmin>
+        }
+      />
+      <Route
+        path="/catalog/categories"
+        element={
+          <RequireAdmin>
+            <CatalogCategoriesPage />
+          </RequireAdmin>
+        }
+      />
+      <Route
+        path="/catalog/brands"
+        element={
+          <RequireAdmin>
+            <CatalogBrandsPage />
           </RequireAdmin>
         }
       />

@@ -1,3 +1,4 @@
+import type { S3Client } from "@aws-sdk/client-s3";
 import express, { type Express } from "express";
 import {
   requestContext,
@@ -5,18 +6,32 @@ import {
   authContext,
   errorHandler,
   notFoundHandler,
+  idempotencyKey,
 } from "@storm/middlewares";
 import type { Logger } from "@storm/logger";
 
+import type { Config } from "./config.js";
 import { SERVICE_NAME } from "./config.js";
+import type { PrismaClient } from "./db.js";
+import { adminMediaRouter } from "./routes/adminMedia.js";
+import { mediaRouter } from "./routes/media.js";
+import { uploadsRouter } from "./routes/uploads.js";
 
 export interface ReadyChecks {
   [name: string]: () => Promise<boolean>;
 }
 
-export function createServer(opts: { logger: Logger; readyChecks?: ReadyChecks }): Express {
+export interface CreateServerOptions {
+  logger: Logger;
+  prisma: PrismaClient;
+  s3: S3Client;
+  config: Config;
+  readyChecks?: ReadyChecks;
+}
+
+export function createServer(opts: CreateServerOptions): Express {
   const app = express();
-  const { logger, readyChecks = {} } = opts;
+  const { logger, prisma, s3, config, readyChecks = {} } = opts;
 
   app.disable("x-powered-by");
   app.use(express.json({ limit: "1mb" }));
@@ -47,6 +62,11 @@ export function createServer(opts: { logger: Logger; readyChecks?: ReadyChecks }
       res.status(503).json({ status: "not_ready", checks: results });
     }
   });
+
+  app.use(mediaRouter(prisma, config));
+  app.use(idempotencyKey({ required: true }));
+  app.use(uploadsRouter(prisma, s3, config));
+  app.use(adminMediaRouter(prisma, config));
 
   app.use(notFoundHandler());
   app.use(errorHandler(logger));

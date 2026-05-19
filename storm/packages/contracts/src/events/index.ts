@@ -17,3 +17,5 @@ export const EventEnvelopeSchema = z.object({
 export type EventEnvelope = z.infer<typeof EventEnvelopeSchema>;
 
 export * from "./identity.js";
+export * from "./catalog.js";
+export * from "./media.js";

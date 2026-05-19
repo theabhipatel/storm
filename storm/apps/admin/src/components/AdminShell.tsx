@@ -6,6 +6,9 @@ import { useCurrentUser, useLogout } from "../features/auth/auth.hooks";
 const NAV = [
   { to: "/dashboard", label: "Dashboard" },
   { to: "/users", label: "Users" },
+  { to: "/catalog/products", label: "Products" },
+  { to: "/catalog/categories", label: "Categories" },
+  { to: "/catalog/brands", label: "Brands" },
 ];
 
 export function AdminShell({

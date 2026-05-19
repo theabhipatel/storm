@@ -5,6 +5,8 @@ const ConfigSchema = z.object({
   port: z.coerce.number().int().positive().default(3002),
   logLevel: z.enum(["debug", "info", "warn", "error"]).default("info"),
   databaseUrl: z.string().min(1),
+  kafkaBrokers: z.string().min(1),
+  kafkaClientId: z.string().min(1),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -14,7 +16,11 @@ export function loadConfig(): Config {
     nodeEnv: process.env["NODE_ENV"],
     port: process.env["PORT"],
     logLevel: process.env["LOG_LEVEL"],
-    databaseUrl: process.env["DATABASE_URL"] ?? "postgresql://catalog:catalog@localhost:5432/catalog?schema=public",
+    databaseUrl:
+      process.env["DATABASE_URL"] ??
+      "postgresql://catalog:catalog_pw@localhost:5432/catalog?schema=public",
+    kafkaBrokers: process.env["KAFKA_BROKERS"] ?? "localhost:19092",
+    kafkaClientId: process.env["KAFKA_CLIENT_ID"] ?? "catalog-service",
   });
 }
 

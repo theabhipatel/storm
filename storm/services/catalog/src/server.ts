@@ -1,22 +1,34 @@
 import express, { type Express } from "express";
+import type { PrismaClient } from "./db.js";
 import {
   requestContext,
   requestLogger,
   authContext,
   errorHandler,
   notFoundHandler,
+  idempotencyKey,
 } from "@storm/middlewares";
 import type { Logger } from "@storm/logger";
 
 import { SERVICE_NAME } from "./config.js";
+import { adminBrandsRouter } from "./routes/adminBrands.js";
+import { adminCategoriesRouter } from "./routes/adminCategories.js";
+import { adminProductsRouter } from "./routes/adminProducts.js";
+import { publicRouter } from "./routes/public.js";
 
 export interface ReadyChecks {
   [name: string]: () => Promise<boolean>;
 }
 
-export function createServer(opts: { logger: Logger; readyChecks?: ReadyChecks }): Express {
+export interface CreateServerOptions {
+  logger: Logger;
+  prisma: PrismaClient;
+  readyChecks?: ReadyChecks;
+}
+
+export function createServer(opts: CreateServerOptions): Express {
   const app = express();
-  const { logger, readyChecks = {} } = opts;
+  const { logger, prisma, readyChecks = {} } = opts;
 
   app.disable("x-powered-by");
   app.use(express.json({ limit: "1mb" }));
@@ -47,6 +59,15 @@ export function createServer(opts: { logger: Logger; readyChecks?: ReadyChecks }
       res.status(503).json({ status: "not_ready", checks: results });
     }
   });
+
+  // Public reads — used by web-bff for /p/:slug and admin app for listings of brand/category.
+  app.use(publicRouter(prisma));
+
+  // Admin endpoints: idempotency-key on mutations, admin-role guard inside routers.
+  app.use(idempotencyKey({ required: true }));
+  app.use(adminBrandsRouter(prisma));
+  app.use(adminCategoriesRouter(prisma));
+  app.use(adminProductsRouter(prisma));
 
   app.use(notFoundHandler());
   app.use(errorHandler(logger));
