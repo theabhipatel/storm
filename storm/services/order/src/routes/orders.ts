@@ -67,7 +67,18 @@ export function ordersRouter(deps: {
     "/api/orders/:id",
     asyncRoute(async (req, res) => {
       const order = await deps.service.getForUser(req.params.id!, req.identity!.userId);
-      res.json(serialiseOrder(order));
+      const history = await deps.repo.history(order.id);
+      res.json({
+        ...serialiseOrder(order),
+        history: history.map((h) => ({
+          id: h.id,
+          fromStatus: h.fromStatus,
+          toStatus: h.toStatus,
+          changedBy: h.changedBy,
+          reason: h.reason,
+          changedAt: h.changedAt.toISOString(),
+        })),
+      });
     }),
   );
 

@@ -11,6 +11,7 @@ const NAV = [
   { to: "/catalog/brands", label: "Brands" },
   { to: "/inventory", label: "Inventory" },
   { to: "/inventory/alerts", label: "Low stock" },
+  { to: "/orders", label: "Orders" },
 ];
 
 export function AdminShell({

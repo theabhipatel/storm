@@ -12,6 +12,7 @@ import type { Logger } from "@storm/logger";
 import { SERVICE_NAME } from "./config.js";
 import { adminRouter } from "./routes/admin.js";
 import { internalRouter } from "./routes/internal.js";
+import type { PrismaClient } from "./db.js";
 import type { StockService } from "./services/stockService.js";
 
 export interface ReadyChecks {
@@ -21,12 +22,13 @@ export interface ReadyChecks {
 export interface CreateServerOptions {
   logger: Logger;
   stock: StockService;
+  prisma: PrismaClient;
   readyChecks?: ReadyChecks;
 }
 
 export function createServer(opts: CreateServerOptions): Express {
   const app = express();
-  const { logger, stock, readyChecks = {} } = opts;
+  const { logger, stock, prisma, readyChecks = {} } = opts;
 
   app.disable("x-powered-by");
   app.use(express.json({ limit: "1mb" }));
@@ -58,7 +60,7 @@ export function createServer(opts: CreateServerOptions): Express {
     }
   });
 
-  app.use(internalRouter(stock));
+  app.use(internalRouter(stock, prisma));
 
   app.use(idempotencyKey({ required: true }));
   app.use(adminRouter(stock));

@@ -12,6 +12,8 @@ import { InventoryAlertsPage } from "./pages/InventoryAlertsPage";
 import { InventoryDetailPage } from "./pages/InventoryDetailPage";
 import { InventoryListPage } from "./pages/InventoryListPage";
 import { LoginPage } from "./pages/LoginPage";
+import { OrderDetailPage } from "./pages/OrderDetailPage";
+import { OrdersListPage } from "./pages/OrdersListPage";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { UserDetailPage } from "./pages/UserDetailPage";
 import { UsersListPage } from "./pages/UsersListPage";
@@ -139,6 +141,22 @@ export function App() {
         element={
           <RequireAdmin>
             <InventoryDetailPage />
+          </RequireAdmin>
+        }
+      />
+      <Route
+        path="/orders"
+        element={
+          <RequireAdmin>
+            <OrdersListPage />
+          </RequireAdmin>
+        }
+      />
+      <Route
+        path="/orders/:id"
+        element={
+          <RequireAdmin>
+            <OrderDetailPage />
           </RequireAdmin>
         }
       />

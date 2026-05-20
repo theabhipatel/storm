@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { href: "/account/profile", label: "Profile" },
   { href: "/account/addresses", label: "Addresses" },
   { href: "/orders", label: "Orders" },
+  { href: "/account/notifications", label: "Notifications" },
   { href: "/account/change-password", label: "Password" },
   { href: "/account/delete", label: "Delete account" },
 ];

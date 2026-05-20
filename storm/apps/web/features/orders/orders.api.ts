@@ -3,10 +3,15 @@ import type {
   CreateOrderRequest,
   CreateOrderResponse,
   Order,
+  OrderHistoryEntry,
   OrderListResponse,
 } from "@storm/contracts";
 
 import { apiSlice } from "../../store/apiSlice";
+
+export interface OrderWithHistory extends Order {
+  history?: OrderHistoryEntry[];
+}
 
 export const ordersApi = apiSlice.injectEndpoints({
   endpoints: (build) => ({
@@ -42,7 +47,7 @@ export const ordersApi = apiSlice.injectEndpoints({
           : [{ type: "OrderList", id: "LIST" }],
     }),
 
-    getOrder: build.query<Order, string>({
+    getOrder: build.query<OrderWithHistory, string>({
       query: (id) => ({ url: `/api/orders/${encodeURIComponent(id)}`, method: "GET" }),
       providesTags: (_r, _e, id) => [{ type: "Order", id }],
     }),

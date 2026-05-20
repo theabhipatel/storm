@@ -7,6 +7,7 @@ import {
   type OrderCreated,
   type OrderFailed,
   type OrderConfirmed,
+  type OrderStatusChanged,
 } from "@storm/contracts";
 import type { Logger } from "@storm/logger";
 
@@ -41,12 +42,36 @@ export interface OrderService {
     actor: { kind: "user" | "admin" | "system"; id: string };
     reason?: string;
   }): Promise<Order & { items: OrderItem[] }>;
+  transitionStatus(input: {
+    orderId: string;
+    toStatus: OrderStatus;
+    adminUserId: string;
+    reason?: string;
+  }): Promise<Order & { items: OrderItem[] }>;
   handlePaymentCaptured(input: {
     razorpayOrderId: string;
     paidAt: Date;
   }): Promise<void>;
   handlePaymentFailed(input: { razorpayOrderId: string; reason: string }): Promise<void>;
   expireStalePending(): Promise<number>;
+}
+
+const ADMIN_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+  pending_payment: [],
+  confirmed: ["processing", "cancelled"],
+  processing: ["shipped", "cancelled"],
+  shipped: ["delivered", "cancelled"],
+  delivered: [],
+  cancelled: [],
+  failed: [],
+};
+
+export function adminTransitionsFor(status: OrderStatus): OrderStatus[] {
+  return ADMIN_TRANSITIONS[status] ?? [];
+}
+
+function isAllowedAdminTransition(from: OrderStatus, to: OrderStatus): boolean {
+  return ADMIN_TRANSITIONS[from]?.includes(to) ?? false;
 }
 
 export function orderService(deps: {
@@ -303,6 +328,8 @@ export function orderService(deps: {
         status: 409,
       });
     }
+    const cancelledAt = new Date();
+    const addressPhone = (order.addressSnapshot as { phone?: string } | null)?.phone;
     const updated = await prisma.$transaction(async (tx) => {
       const next = await repo.applyTransition(tx, {
         orderId: order.id,
@@ -319,6 +346,11 @@ export function orderService(deps: {
         orderId: order.id,
         userId: order.userId,
         cancelledBy: input.actor.kind,
+        cancelledAt: cancelledAt.toISOString(),
+        ...(input.reason ? { reason: input.reason } : {}),
+        ...(order.customerEmail ? { customerEmail: order.customerEmail } : {}),
+        ...(order.customerName ? { customerName: order.customerName } : {}),
+        ...(addressPhone ? { phone: addressPhone } : {}),
       };
       await appendOutbox(tx, {
         aggregateId: order.id,
@@ -328,6 +360,70 @@ export function orderService(deps: {
       return next;
     });
     return repo.findById(updated.id).then((o) => o!);
+  }
+
+  async function transitionStatus(input: {
+    orderId: string;
+    toStatus: OrderStatus;
+    adminUserId: string;
+    reason?: string;
+  }) {
+    if (input.toStatus === "cancelled") {
+      return cancel({
+        orderId: input.orderId,
+        actor: { kind: "admin", id: input.adminUserId },
+        ...(input.reason ? { reason: input.reason } : {}),
+      });
+    }
+    const order = await repo.findById(input.orderId);
+    if (!order) {
+      throw new StormError({
+        code: ErrorCodes.NOT_FOUND,
+        message: "Order not found.",
+        status: 404,
+      });
+    }
+    if (!isAllowedAdminTransition(order.status, input.toStatus)) {
+      throw new StormError({
+        code: ErrorCodes.INVALID_STATE_TRANSITION,
+        message: `Cannot transition ${order.status} → ${input.toStatus}.`,
+        status: 422,
+      });
+    }
+    const changedAt = new Date();
+    const addressPhone = (order.addressSnapshot as { phone?: string } | null)?.phone;
+    await prisma.$transaction(async (tx) => {
+      await repo.applyTransition(tx, {
+        orderId: order.id,
+        toStatus: input.toStatus,
+      });
+      await repo.recordTransition(tx, {
+        orderId: order.id,
+        fromStatus: order.status,
+        toStatus: input.toStatus,
+        changedBy: input.adminUserId,
+        reason: input.reason ?? "admin_transition",
+      });
+      const payload: OrderStatusChanged = {
+        orderId: order.id,
+        userId: order.userId,
+        fromStatus: order.status,
+        toStatus: input.toStatus,
+        changedAt: changedAt.toISOString(),
+        changedBy: input.adminUserId,
+        ...(input.reason ? { reason: input.reason } : {}),
+        ...(order.customerEmail ? { customerEmail: order.customerEmail } : {}),
+        ...(order.customerName ? { customerName: order.customerName } : {}),
+        ...(addressPhone ? { phone: addressPhone } : {}),
+      };
+      await appendOutbox(tx, {
+        aggregateId: order.id,
+        eventType: OrderEventTypes.StatusChanged,
+        payload: payload as unknown as Record<string, unknown>,
+      });
+    });
+    const full = await repo.findById(order.id);
+    return full!;
   }
 
   async function handlePaymentCaptured(input: { razorpayOrderId: string; paidAt: Date }) {
@@ -447,6 +543,7 @@ export function orderService(deps: {
     createOrder,
     getForUser,
     cancel,
+    transitionStatus,
     handlePaymentCaptured,
     handlePaymentFailed,
     expireStalePending,

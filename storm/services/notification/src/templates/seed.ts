@@ -175,4 +175,94 @@ export const TEMPLATE_SEED: ReadonlyArray<Omit<TemplateRow, "createdAt">> = [
       "Storm: Payment for order #{{orderShort}} did not go through. You can retry from your cart.",
     version: 1,
   },
+  {
+    _id: "order-status-processing",
+    channel: "email",
+    locale: "en-IN",
+    subject: "Order #{{orderId}} — we're preparing your order",
+    htmlBody:
+      "<p>Hi {{customerName}},</p><p>Good news — we're preparing order <strong>#{{orderId}}</strong>. We'll let you know the moment it ships.</p><p>— Team Storm</p>",
+    textBody:
+      "Hi {{customerName}},\n\nGood news — we're preparing order #{{orderId}}. We'll let you know the moment it ships.\n\n— Team Storm",
+    version: 1,
+  },
+  {
+    _id: "order-status-processing-sms",
+    channel: "sms",
+    locale: "en-IN",
+    smsBody: "Storm: Order #{{orderShort}} is being prepared. We'll update you when it ships.",
+    version: 1,
+  },
+  {
+    _id: "order-status-shipped",
+    channel: "email",
+    locale: "en-IN",
+    subject: "Order #{{orderId}} is on the way",
+    htmlBody:
+      "<p>Hi {{customerName}},</p><p>Your order <strong>#{{orderId}}</strong> has shipped and is on its way.</p><p>— Team Storm</p>",
+    textBody:
+      "Hi {{customerName}},\n\nYour order #{{orderId}} has shipped and is on its way.\n\n— Team Storm",
+    version: 1,
+  },
+  {
+    _id: "order-status-shipped-sms",
+    channel: "sms",
+    locale: "en-IN",
+    smsBody: "Storm: Order #{{orderShort}} has shipped. It's on the way.",
+    version: 1,
+  },
+  {
+    _id: "order-status-delivered",
+    channel: "email",
+    locale: "en-IN",
+    subject: "Order #{{orderId}} delivered",
+    htmlBody:
+      "<p>Hi {{customerName}},</p><p>Your order <strong>#{{orderId}}</strong> has been delivered. Thanks for shopping with Storm.</p><p>— Team Storm</p>",
+    textBody:
+      "Hi {{customerName}},\n\nYour order #{{orderId}} has been delivered. Thanks for shopping with Storm.\n\n— Team Storm",
+    version: 1,
+  },
+  {
+    _id: "order-status-delivered-sms",
+    channel: "sms",
+    locale: "en-IN",
+    smsBody: "Storm: Order #{{orderShort}} delivered. Thanks for shopping with us!",
+    version: 1,
+  },
+  {
+    _id: "order-cancelled-by-customer",
+    channel: "email",
+    locale: "en-IN",
+    subject: "Order #{{orderId}} cancellation confirmed",
+    htmlBody:
+      "<p>Hi {{customerName}},</p><p>We've cancelled your order <strong>#{{orderId}}</strong> as requested. Any payment authorisation will be released shortly.</p><p>— Team Storm</p>",
+    textBody:
+      "Hi {{customerName}},\n\nWe've cancelled your order #{{orderId}} as requested. Any payment authorisation will be released shortly.\n\n— Team Storm",
+    version: 1,
+  },
+  {
+    _id: "order-cancelled-by-customer-sms",
+    channel: "sms",
+    locale: "en-IN",
+    smsBody: "Storm: Your order #{{orderShort}} has been cancelled.",
+    version: 1,
+  },
+  {
+    _id: "order-cancelled-by-admin",
+    channel: "email",
+    locale: "en-IN",
+    subject: "Order #{{orderId}} cancelled",
+    htmlBody:
+      "<p>Hi {{customerName}},</p><p>We're sorry — your order <strong>#{{orderId}}</strong> was cancelled.{{#if reason}} Reason: {{reason}}.{{/if}} Any payment will be refunded to the original method.</p><p>— Team Storm</p>",
+    textBody:
+      "Hi {{customerName}},\n\nWe're sorry — your order #{{orderId}} was cancelled.{{#if reason}} Reason: {{reason}}.{{/if}} Any payment will be refunded to the original method.\n\n— Team Storm",
+    version: 1,
+  },
+  {
+    _id: "order-cancelled-by-admin-sms",
+    channel: "sms",
+    locale: "en-IN",
+    smsBody: "Storm: Order #{{orderShort}} was cancelled. Check email for details.",
+    version: 1,
+  },
 ];

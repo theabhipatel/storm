@@ -70,9 +70,28 @@ export const OrderCancelledPayload = z.object({
   orderId: z.string().uuid(),
   userId: z.string().uuid(),
   cancelledBy: z.enum(["user", "admin", "system"]),
+  reason: z.string().optional(),
+  cancelledAt: z.string().datetime(),
+  customerEmail: z.string().email().optional(),
+  customerName: z.string().optional(),
+  phone: z.string().optional(),
+});
+
+export const OrderStatusChangedPayload = z.object({
+  orderId: z.string().uuid(),
+  userId: z.string().uuid(),
+  fromStatus: z.string(),
+  toStatus: z.string(),
+  changedAt: z.string().datetime(),
+  changedBy: z.string(),
+  reason: z.string().optional(),
+  customerEmail: z.string().email().optional(),
+  customerName: z.string().optional(),
+  phone: z.string().optional(),
 });
 
 export type OrderCreated = z.infer<typeof OrderCreatedPayload>;
 export type OrderConfirmed = z.infer<typeof OrderConfirmedPayload>;
 export type OrderFailed = z.infer<typeof OrderFailedPayload>;
 export type OrderCancelled = z.infer<typeof OrderCancelledPayload>;
+export type OrderStatusChanged = z.infer<typeof OrderStatusChangedPayload>;

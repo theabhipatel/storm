@@ -11,7 +11,7 @@ async function main(): Promise<void> {
     pretty: config.nodeEnv !== "production",
   });
 
-  const app = createServer({ logger });
+  const app = createServer({ logger, config });
 
   const server = app.listen(config.port, () => {
     logger.info({ port: config.port, env: config.nodeEnv }, "service_started");

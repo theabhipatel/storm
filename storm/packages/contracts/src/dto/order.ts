@@ -61,6 +61,8 @@ export const OrderSchema = z.object({
   address: OrderAddressSnapshotSchema,
   paymentMethod: PaymentMethodSchema,
   razorpayOrderId: z.string().nullable(),
+  customerEmail: z.string().optional(),
+  customerName: z.string().optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   confirmedAt: z.string().datetime().nullable(),
@@ -76,10 +78,29 @@ export const OrderSummarySchema = OrderSchema.pick({
   createdAt: true,
   confirmedAt: true,
 }).extend({
+  updatedAt: z.string().datetime().optional(),
+  customerEmail: z.string().optional(),
+  customerName: z.string().optional(),
   thumbnailUrl: z.string().url().nullable().optional(),
   firstItemName: z.string().optional(),
 });
 export type OrderSummary = z.infer<typeof OrderSummarySchema>;
+
+export const OrderHistoryEntrySchema = z.object({
+  id: z.string().uuid(),
+  fromStatus: OrderStatusSchema.nullable(),
+  toStatus: OrderStatusSchema,
+  changedBy: z.string(),
+  reason: z.string().nullable(),
+  changedAt: z.string().datetime(),
+});
+export type OrderHistoryEntry = z.infer<typeof OrderHistoryEntrySchema>;
+
+export const AdminOrderDetailSchema = OrderSchema.extend({
+  allowedTransitions: z.array(OrderStatusSchema),
+  history: z.array(OrderHistoryEntrySchema),
+});
+export type AdminOrderDetail = z.infer<typeof AdminOrderDetailSchema>;
 
 export const CreateOrderRequestSchema = z.object({
   addressId: z.string().uuid(),

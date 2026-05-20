@@ -25,6 +25,9 @@ export const catalogMediaApi = createApi({
     "Stock",
     "StockDetail",
     "LowStock",
+    "AdminOrderList",
+    "AdminOrder",
+    "AdminOrderAudit",
   ],
   endpoints: () => ({}),
 });

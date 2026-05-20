@@ -70,6 +70,7 @@ async function main(): Promise<void> {
   const app = createServer({
     logger,
     stock,
+    prisma,
     readyChecks: {
       postgres: async () => {
         await prisma.$queryRaw`SELECT 1`;

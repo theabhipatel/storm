@@ -17,6 +17,9 @@ export const MEDIA_BASE_URL =
 export const INVENTORY_BASE_URL =
   (import.meta.env["VITE_INVENTORY_BASE_URL"] as string | undefined) ??
   "http://localhost:3004";
+export const ADMIN_BFF_BASE_URL =
+  (import.meta.env["VITE_ADMIN_BFF_BASE_URL"] as string | undefined) ??
+  "http://localhost:3100";
 
 function makeClient(baseURL: string): AxiosInstance {
   const client = axios.create({
@@ -38,9 +41,10 @@ function makeClient(baseURL: string): AxiosInstance {
 export const catalogClient = makeClient(CATALOG_BASE_URL);
 export const mediaClient = makeClient(MEDIA_BASE_URL);
 export const inventoryClient = makeClient(INVENTORY_BASE_URL);
+export const adminBffClient = makeClient(ADMIN_BFF_BASE_URL);
 
 export interface ServiceQueryArgs {
-  client: "catalog" | "media" | "inventory";
+  client: "catalog" | "media" | "inventory" | "adminBff";
   url: string;
   method?: AxiosRequestConfig["method"] | undefined;
   data?: unknown;
@@ -55,7 +59,9 @@ export const serviceBaseQuery: BaseQueryFn<ServiceQueryArgs, unknown, ApiError> 
         ? catalogClient
         : client === "media"
           ? mediaClient
-          : inventoryClient;
+          : client === "inventory"
+            ? inventoryClient
+            : adminBffClient;
     try {
       const config: AxiosRequestConfig = { url, method, data };
       if (params !== undefined) config.params = params;

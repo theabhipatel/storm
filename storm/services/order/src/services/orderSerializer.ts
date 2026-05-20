@@ -40,7 +40,10 @@ export function serialiseSummary(order: Order & { items: OrderItem[] }) {
     itemsCount: order.itemsCount,
     totalPaise: order.totalAmountPaise,
     currency: order.currency,
+    customerEmail: order.customerEmail,
+    customerName: order.customerName,
     createdAt: order.createdAt.toISOString(),
+    updatedAt: order.updatedAt.toISOString(),
     confirmedAt: order.confirmedAt?.toISOString() ?? null,
     firstItemName: first?.name,
     thumbnailUrl: first && (first.image as { url?: string } | null)?.url

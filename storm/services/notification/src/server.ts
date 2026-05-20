@@ -10,7 +10,9 @@ import type { Logger } from "@storm/logger";
 
 import { SERVICE_NAME } from "./config.js";
 import { invoicesRouter } from "./routes/invoices.js";
+import { notificationsRouter } from "./routes/notifications.js";
 import type { InvoiceStore } from "./services/invoiceStore.js";
+import type { MongoState } from "./infra/mongo.js";
 
 export interface ReadyChecks {
   [name: string]: () => Promise<boolean>;
@@ -19,6 +21,7 @@ export interface ReadyChecks {
 export interface ServerDeps {
   logger: Logger;
   invoiceStore: InvoiceStore;
+  mongo: MongoState;
   readyChecks?: ReadyChecks;
 }
 
@@ -57,6 +60,7 @@ export function createServer(opts: ServerDeps): Express {
   });
 
   app.use(invoicesRouter({ store: opts.invoiceStore }));
+  app.use(notificationsRouter({ mongo: opts.mongo }));
 
   app.use(notFoundHandler());
   app.use(errorHandler(logger));

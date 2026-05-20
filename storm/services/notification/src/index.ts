@@ -45,6 +45,7 @@ async function main(): Promise<void> {
   const app = createServer({
     logger,
     invoiceStore,
+    mongo,
     readyChecks: {
       mongo: async () => {
         await mongo!.db.command({ ping: 1 });

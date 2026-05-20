@@ -2,11 +2,28 @@ import {
   OrderEventTypes,
   OrderConfirmedPayload,
   OrderFailedPayload,
+  OrderStatusChangedPayload,
+  OrderCancelledPayload,
 } from "@storm/contracts";
 
 import { renderEmail, renderSms } from "../templates/render.js";
 import { generateInvoicePdf, type InvoiceLineItem } from "../services/invoicePdf.js";
 import type { EventHandler, HandlerDeps, HandledEnvelope } from "./identity.js";
+
+const STATUS_TEMPLATE_MAP: Record<string, { email: string; sms: string } | undefined> = {
+  processing: {
+    email: "order-status-processing",
+    sms: "order-status-processing-sms",
+  },
+  shipped: {
+    email: "order-status-shipped",
+    sms: "order-status-shipped-sms",
+  },
+  delivered: {
+    email: "order-status-delivered",
+    sms: "order-status-delivered-sms",
+  },
+};
 
 const PAYMENT_METHOD_LABEL = "Razorpay";
 
@@ -104,6 +121,131 @@ export const orderEventHandlers: Record<string, EventHandler> = {
         .catch((err: unknown) => {
           deps.logger.warn({ err, orderId: payload.orderId }, "order_confirmed_sms_failed");
         });
+    }
+  },
+
+  [OrderEventTypes.StatusChanged]: async (env, deps) => {
+    const payload = OrderStatusChangedPayload.parse(env.payload);
+    const tplIds = STATUS_TEMPLATE_MAP[payload.toStatus];
+    if (!tplIds) {
+      deps.logger.debug(
+        { orderId: payload.orderId, toStatus: payload.toStatus },
+        "order_status_no_template",
+      );
+      return;
+    }
+    const customerName = payload.customerName ?? "Customer";
+    const orderShort = payload.orderId.slice(0, 8);
+
+    if (payload.customerEmail) {
+      const tpl = await renderEmail(deps.mongo.templates, tplIds.email, {
+        orderId: payload.orderId,
+        customerName,
+      });
+      const emailResult = await deps.email.send({ to: payload.customerEmail, ...tpl });
+      await logSend(
+        deps,
+        env,
+        payload.userId,
+        "email",
+        tplIds.email,
+        { orderId: payload.orderId, toStatus: payload.toStatus },
+        emailResult,
+      );
+    } else {
+      deps.logger.warn(
+        { orderId: payload.orderId },
+        "order_status_skipped_missing_email",
+      );
+    }
+
+    if (payload.phone) {
+      const sms = await renderSms(deps.mongo.templates, tplIds.sms, { orderShort });
+      const to = formatPhone(payload.phone);
+      const smsResult = await deps.sms
+        .send({ to, body: sms.body })
+        .catch((err: unknown) => {
+          deps.logger.warn({ err, orderId: payload.orderId }, "order_status_sms_failed");
+          return undefined;
+        });
+      if (smsResult) {
+        await logSend(
+          deps,
+          env,
+          payload.userId,
+          "sms",
+          tplIds.sms,
+          { orderId: payload.orderId, toStatus: payload.toStatus },
+          smsResult,
+        );
+      }
+    }
+  },
+
+  [OrderEventTypes.Cancelled]: async (env, deps) => {
+    const payload = OrderCancelledPayload.parse(env.payload);
+    if (payload.cancelledBy === "system") {
+      deps.logger.debug({ orderId: payload.orderId }, "order_cancelled_system_no_notify");
+      return;
+    }
+    const customerName = payload.customerName ?? "Customer";
+    const orderShort = payload.orderId.slice(0, 8);
+    const emailTpl =
+      payload.cancelledBy === "admin"
+        ? "order-cancelled-by-admin"
+        : "order-cancelled-by-customer";
+    const smsTpl =
+      payload.cancelledBy === "admin"
+        ? "order-cancelled-by-admin-sms"
+        : "order-cancelled-by-customer-sms";
+
+    if (payload.customerEmail) {
+      const tpl = await renderEmail(deps.mongo.templates, emailTpl, {
+        orderId: payload.orderId,
+        customerName,
+        reason: payload.reason ?? "",
+      });
+      const emailResult = await deps.email.send({ to: payload.customerEmail, ...tpl });
+      await logSend(
+        deps,
+        env,
+        payload.userId,
+        "email",
+        emailTpl,
+        {
+          orderId: payload.orderId,
+          cancelledBy: payload.cancelledBy,
+          reason: payload.reason ?? null,
+        },
+        emailResult,
+      );
+    } else {
+      deps.logger.warn(
+        { orderId: payload.orderId },
+        "order_cancelled_skipped_missing_email",
+      );
+    }
+
+    if (payload.phone) {
+      const sms = await renderSms(deps.mongo.templates, smsTpl, { orderShort });
+      const to = formatPhone(payload.phone);
+      const smsResult = await deps.sms
+        .send({ to, body: sms.body })
+        .catch((err: unknown) => {
+          deps.logger.warn({ err, orderId: payload.orderId }, "order_cancelled_sms_failed");
+          return undefined;
+        });
+      if (smsResult) {
+        await logSend(
+          deps,
+          env,
+          payload.userId,
+          "sms",
+          smsTpl,
+          { orderId: payload.orderId, cancelledBy: payload.cancelledBy },
+          smsResult,
+        );
+      }
     }
   },
 
