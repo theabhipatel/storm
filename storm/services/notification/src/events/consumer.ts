@@ -2,7 +2,8 @@ import { Kafka, type Consumer, type Producer } from "kafkajs";
 import { EventEnvelopeSchema } from "@storm/contracts";
 
 import type { Config } from "../config.js";
-import { eventHandlers, type HandlerDeps } from "../handlers/identity.js";
+import type { HandlerDeps } from "../handlers/identity.js";
+import { allEventHandlers as eventHandlers } from "../handlers/registry.js";
 
 export interface ConsumerSetup {
   consumer: Consumer;

@@ -1,11 +1,72 @@
 // payment service Prisma schema.
-// Entities are added on the owning service's day.
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../src/generated/client"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+enum PaymentStatus {
+  created
+  captured
+  failed
+}
+
+model Payment {
+  id                String        @id @db.Uuid
+  orderId           String        @map("order_id") @db.Uuid
+  razorpayOrderId   String        @map("razorpay_order_id")
+  razorpayPaymentId String?       @map("razorpay_payment_id")
+  amountPaise       Int           @map("amount_paise")
+  currency          String        @default("INR")
+  method            String?
+  status            PaymentStatus @default(created)
+  capturedAt        DateTime?     @map("captured_at")
+  failureReason     String?       @map("failure_reason")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+
+  @@index([orderId])
+  @@index([razorpayOrderId])
+  @@index([status, createdAt])
+  @@map("payments")
+}
+
+model ProcessedWebhookEvent {
+  razorpayEventId String   @id @map("razorpay_event_id")
+  eventType       String   @map("event_type")
+  receivedAt      DateTime @default(now()) @map("received_at")
+
+  @@map("processed_webhook_events")
+}
+
+model ReconciliationReport {
+  id              String   @id @db.Uuid
+  forDate         DateTime @map("for_date") @db.Date
+  ourCount        Int      @map("our_count")
+  razorpayCount   Int      @map("razorpay_count")
+  matchedCount    Int      @map("matched_count")
+  missingInOurs   Json     @map("missing_in_ours")
+  missingInRzp    Json     @map("missing_in_rzp")
+  mismatches      Json
+  generatedAt     DateTime @default(now()) @map("generated_at")
+
+  @@unique([forDate])
+  @@map("reconciliation_reports")
+}
+
+model Outbox {
+  id          String    @id @db.Uuid
+  aggregateId String    @map("aggregate_id")
+  eventType   String    @map("event_type")
+  payload     Json
+  createdAt   DateTime  @default(now()) @map("created_at")
+  publishedAt DateTime? @map("published_at")
+
+  @@index([publishedAt, createdAt])
+  @@map("outbox")
 }

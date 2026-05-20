@@ -20,6 +20,7 @@ import type { Config } from "../config.js";
 import type { MongoState } from "../infra/mongo.js";
 import type { EmailProvider } from "../providers/email.js";
 import type { SmsProvider } from "../providers/sms.js";
+import type { InvoiceStore } from "../services/invoiceStore.js";
 import { renderEmail, renderSms } from "../templates/render.js";
 
 export interface HandlerDeps {
@@ -28,6 +29,7 @@ export interface HandlerDeps {
   sms: SmsProvider;
   config: Config;
   logger: Logger;
+  invoiceStore: InvoiceStore;
 }
 
 export interface HandledEnvelope {

@@ -22,3 +22,4 @@ export * from "./media.js";
 export * from "./inventory.js";
 export * from "./cart.js";
 export * from "./order.js";
+export * from "./payment.js";

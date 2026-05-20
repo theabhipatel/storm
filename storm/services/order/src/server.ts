@@ -8,13 +8,32 @@ import {
 } from "@storm/middlewares";
 import type { Logger } from "@storm/logger";
 
+import type { Config } from "./config.js";
 import { SERVICE_NAME } from "./config.js";
+import { adminRouter } from "./routes/admin.js";
+import { checkoutRouter } from "./routes/checkout.js";
+import { invoiceRouter } from "./routes/invoice.js";
+import { ordersRouter } from "./routes/orders.js";
+import type { OrderRepo } from "./repositories/orderRepo.js";
+import type { OrderService } from "./services/orderService.js";
+import type { CartClient } from "./services/cartClient.js";
+import type { PrismaClient } from "./db.js";
 
 export interface ReadyChecks {
   [name: string]: () => Promise<boolean>;
 }
 
-export function createServer(opts: { logger: Logger; readyChecks?: ReadyChecks }): Express {
+export interface CreateServerOptions {
+  logger: Logger;
+  config: Config;
+  prisma: PrismaClient;
+  service: OrderService;
+  repo: OrderRepo;
+  cart: CartClient;
+  readyChecks?: ReadyChecks;
+}
+
+export function createServer(opts: CreateServerOptions): Express {
   const app = express();
   const { logger, readyChecks = {} } = opts;
 
@@ -47,6 +66,16 @@ export function createServer(opts: { logger: Logger; readyChecks?: ReadyChecks }
       res.status(503).json({ status: "not_ready", checks: results });
     }
   });
+
+  app.use(checkoutRouter({ cart: opts.cart, config: opts.config }));
+  app.use(ordersRouter({ service: opts.service, repo: opts.repo }));
+  app.use(
+    invoiceRouter({
+      service: opts.service,
+      notificationBaseUrl: opts.config.notificationBaseUrl,
+    }),
+  );
+  app.use(adminRouter({ service: opts.service, repo: opts.repo, prisma: opts.prisma }));
 
   app.use(notFoundHandler());
   app.use(errorHandler(logger));

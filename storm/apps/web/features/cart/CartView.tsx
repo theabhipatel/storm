@@ -154,14 +154,18 @@ function CartSummary({ cart }: { cart: Cart }) {
           Some items are out of stock. Remove them to proceed.
         </p>
       )}
-      <button
-        type="button"
-        disabled
-        className="w-full cursor-not-allowed rounded-md bg-neutral-900 px-4 py-2 text-sm font-semibold text-white opacity-60"
-        title="Checkout flow arrives in Day 7"
+      <Link
+        href="/checkout"
+        aria-disabled={hasUnavailable || cart.items.length === 0}
+        className={
+          "block w-full rounded-md px-4 py-2 text-center text-sm font-semibold text-white " +
+          (hasUnavailable || cart.items.length === 0
+            ? "pointer-events-none bg-neutral-900 opacity-60"
+            : "bg-neutral-900 hover:bg-neutral-800")
+        }
       >
-        Proceed to checkout (Day 7)
-      </button>
+        Proceed to checkout
+      </Link>
     </aside>
   );
 }

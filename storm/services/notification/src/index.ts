@@ -6,6 +6,7 @@ import { connectMongo, disconnectMongo, type MongoState } from "./infra/mongo.js
 import { createEmailProvider } from "./providers/email.js";
 import { createSmsProvider } from "./providers/sms.js";
 import { createServer } from "./server.js";
+import { createLocalInvoiceStore } from "./services/invoiceStore.js";
 import { ensureTemplatesSeeded } from "./templates/render.js";
 
 async function main(): Promise<void> {
@@ -28,6 +29,7 @@ async function main(): Promise<void> {
 
   const email = createEmailProvider(config);
   const sms = createSmsProvider(config, logger);
+  const invoiceStore = createLocalInvoiceStore({ baseDir: config.invoiceStorageDir });
 
   const consumerSetup = await createNotificationConsumer(config, {
     mongo,
@@ -35,12 +37,14 @@ async function main(): Promise<void> {
     sms,
     config,
     logger,
+    invoiceStore,
   });
   await consumerSetup.start();
   logger.info({ groupId: config.kafkaConsumerGroup }, "consumer_started");
 
   const app = createServer({
     logger,
+    invoiceStore,
     readyChecks: {
       mongo: async () => {
         await mongo!.db.command({ ping: 1 });

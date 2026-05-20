@@ -33,6 +33,11 @@ const ConfigSchema = z.object({
 
   // Retry policy
   maxAttempts: z.coerce.number().int().positive().default(3),
+
+  // Invoice storage (S3 in prod; local disk in dev).
+  invoiceStorageDir: z.string().min(1).default("./var/invoices"),
+  invoiceCompanyName: z.string().min(1).default("Storm Commerce"),
+  invoiceCompanyTagline: z.string().default("Bharat's fastest e-commerce"),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -67,6 +72,10 @@ export function loadConfig(): Config {
     webAppOrigin: process.env["WEB_APP_ORIGIN"],
 
     maxAttempts: process.env["MAX_ATTEMPTS"],
+
+    invoiceStorageDir: process.env["INVOICE_STORAGE_DIR"],
+    invoiceCompanyName: process.env["INVOICE_COMPANY_NAME"],
+    invoiceCompanyTagline: process.env["INVOICE_COMPANY_TAGLINE"],
   });
 }
 

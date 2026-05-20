@@ -9,12 +9,20 @@ import {
 import type { Logger } from "@storm/logger";
 
 import { SERVICE_NAME } from "./config.js";
+import { invoicesRouter } from "./routes/invoices.js";
+import type { InvoiceStore } from "./services/invoiceStore.js";
 
 export interface ReadyChecks {
   [name: string]: () => Promise<boolean>;
 }
 
-export function createServer(opts: { logger: Logger; readyChecks?: ReadyChecks }): Express {
+export interface ServerDeps {
+  logger: Logger;
+  invoiceStore: InvoiceStore;
+  readyChecks?: ReadyChecks;
+}
+
+export function createServer(opts: ServerDeps): Express {
   const app = express();
   const { logger, readyChecks = {} } = opts;
 
@@ -47,6 +55,8 @@ export function createServer(opts: { logger: Logger; readyChecks?: ReadyChecks }
       res.status(503).json({ status: "not_ready", checks: results });
     }
   });
+
+  app.use(invoicesRouter({ store: opts.invoiceStore }));
 
   app.use(notFoundHandler());
   app.use(errorHandler(logger));

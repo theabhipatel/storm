@@ -19,14 +19,44 @@ const OrderItem = z.object({
   pricePaise: z.number().int().nonnegative(),
 });
 
+const OrderAddressSnapshot = z.object({
+  fullName: z.string(),
+  phone: z.string(),
+  line1: z.string(),
+  line2: z.string().nullable().optional(),
+  city: z.string(),
+  state: z.string(),
+  pincode: z.string(),
+  country: z.string().default("IN"),
+});
+
+export const OrderCreatedPayload = z.object({
+  orderId: z.string().uuid(),
+  userId: z.string().uuid(),
+  reservationId: z.string().uuid().nullable(),
+  razorpayOrderId: z.string(),
+  items: z.array(OrderItem),
+  subtotalPaise: z.number().int().nonnegative(),
+  shippingFeePaise: z.number().int().nonnegative(),
+  totalPaise: z.number().int().nonnegative(),
+  currency: z.literal("INR"),
+  address: OrderAddressSnapshot,
+  createdAt: z.string().datetime(),
+});
+
 export const OrderConfirmedPayload = z.object({
   orderId: z.string().uuid(),
   userId: z.string().uuid(),
   reservationId: z.string().uuid().nullable(),
   items: z.array(OrderItem),
+  subtotalPaise: z.number().int().nonnegative().optional(),
+  shippingFeePaise: z.number().int().nonnegative().optional(),
   totalPaise: z.number().int().nonnegative(),
   currency: z.literal("INR"),
+  address: OrderAddressSnapshot.optional(),
   paidAt: z.string().datetime(),
+  customerEmail: z.string().email().optional(),
+  customerName: z.string().optional(),
 });
 
 export const OrderFailedPayload = z.object({
@@ -42,6 +72,7 @@ export const OrderCancelledPayload = z.object({
   cancelledBy: z.enum(["user", "admin", "system"]),
 });
 
+export type OrderCreated = z.infer<typeof OrderCreatedPayload>;
 export type OrderConfirmed = z.infer<typeof OrderConfirmedPayload>;
 export type OrderFailed = z.infer<typeof OrderFailedPayload>;
 export type OrderCancelled = z.infer<typeof OrderCancelledPayload>;

@@ -2,11 +2,18 @@ import nodemailer, { type Transporter } from "nodemailer";
 
 import type { Config } from "../config.js";
 
+export interface EmailAttachment {
+  filename: string;
+  content: Buffer;
+  contentType?: string;
+}
+
 export interface SendEmailInput {
   to: string;
   subject: string;
   html?: string;
   text?: string;
+  attachments?: EmailAttachment[];
 }
 
 export interface EmailProvider {
@@ -26,8 +33,6 @@ export function createEmailProvider(config: Config): EmailProvider {
         ignoreTLS: true,
       });
     } else {
-      // SES via SMTP — keep nodemailer transport for parity with local;
-      // production wiring uses the AWS SDK directly (added in a later day).
       cached = nodemailer.createTransport({
         host: `email-smtp.${config.awsRegion}.amazonaws.com`,
         port: 587,
@@ -45,6 +50,15 @@ export function createEmailProvider(config: Config): EmailProvider {
         subject: input.subject,
         ...(input.html ? { html: input.html } : {}),
         ...(input.text ? { text: input.text } : {}),
+        ...(input.attachments && input.attachments.length
+          ? {
+              attachments: input.attachments.map((a) => ({
+                filename: a.filename,
+                content: a.content,
+                ...(a.contentType ? { contentType: a.contentType } : {}),
+              })),
+            }
+          : {}),
       });
       return { messageId: info.messageId };
     },

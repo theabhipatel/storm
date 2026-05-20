@@ -1,11 +1,111 @@
 // order service Prisma schema.
-// Entities are added on the owning service's day.
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../src/generated/client"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+enum OrderStatus {
+  pending_payment
+  confirmed
+  processing
+  shipped
+  delivered
+  cancelled
+  failed
+}
+
+enum PaymentMethod {
+  razorpay
+}
+
+model Order {
+  id               String        @id @db.Uuid
+  userId           String        @map("user_id") @db.Uuid
+  status           OrderStatus   @default(pending_payment)
+  itemsCount       Int           @map("items_count")
+  subtotalPaise    Int           @map("subtotal_paise")
+  shippingFeePaise Int           @map("shipping_fee_paise")
+  totalAmountPaise Int           @map("total_amount_paise")
+  currency         String        @default("INR")
+  addressSnapshot  Json          @map("address_snapshot")
+  paymentMethod    PaymentMethod @default(razorpay) @map("payment_method")
+  razorpayOrderId  String?       @map("razorpay_order_id")
+  reservationId    String?       @map("reservation_id") @db.Uuid
+  reservationExpiresAt DateTime? @map("reservation_expires_at")
+  idempotencyKey   String        @map("idempotency_key")
+  customerEmail    String        @map("customer_email")
+  customerName     String        @map("customer_name")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+  confirmedAt      DateTime?     @map("confirmed_at")
+
+  items   OrderItem[]
+  history OrderStatusHistory[]
+
+  @@unique([userId, idempotencyKey])
+  @@index([userId, createdAt])
+  @@index([status, reservationExpiresAt])
+  @@index([razorpayOrderId])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id            String  @id @db.Uuid
+  orderId       String  @map("order_id") @db.Uuid
+  sku           String
+  productId     String  @map("product_id") @db.Uuid
+  variantId     String? @map("variant_id") @db.Uuid
+  name          String
+  image         Json?
+  unitPricePaise Int    @map("unit_price_paise")
+  qty           Int
+  lineTotalPaise Int    @map("line_total_paise")
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([sku])
+  @@map("order_items")
+}
+
+model OrderStatusHistory {
+  id         String      @id @db.Uuid
+  orderId    String      @map("order_id") @db.Uuid
+  fromStatus OrderStatus? @map("from_status")
+  toStatus   OrderStatus @map("to_status")
+  changedAt  DateTime    @default(now()) @map("changed_at")
+  changedBy  String      @map("changed_by")
+  reason     String?
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, changedAt])
+  @@map("order_status_history")
+}
+
+model Outbox {
+  id          String    @id @db.Uuid
+  aggregateId String    @map("aggregate_id")
+  eventType   String    @map("event_type")
+  payload     Json
+  createdAt   DateTime  @default(now()) @map("created_at")
+  publishedAt DateTime? @map("published_at")
+
+  @@index([publishedAt, createdAt])
+  @@map("outbox")
+}
+
+model ProcessedEvent {
+  eventId     String   @id @map("event_id")
+  eventType   String   @map("event_type")
+  processedAt DateTime @default(now()) @map("processed_at")
+
+  @@map("processed_events")
 }

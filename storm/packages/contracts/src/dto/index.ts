@@ -10,6 +10,7 @@ export * from "./cart.js";
 export * from "./wishlist.js";
 export * from "./inventory.js";
 export * from "./recommendation.js";
+export * from "./order.js";
 
 export const HealthResponseSchema = z.object({
   status: z.literal("ok"),

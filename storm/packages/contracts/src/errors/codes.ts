@@ -66,6 +66,16 @@ export const ErrorCodes = {
 
   // wishlist-service
   WISHLIST_LIMIT_EXCEEDED: "WISHLIST_LIMIT_EXCEEDED",
+
+  // order-service
+  CART_EMPTY: "CART_EMPTY",
+  ADDRESS_NOT_OWNED: "ADDRESS_NOT_OWNED",
+  ORDER_NOT_CANCELLABLE: "ORDER_NOT_CANCELLABLE",
+  ORDER_NOT_OWNED: "ORDER_NOT_OWNED",
+
+  // payment-service
+  PAYMENT_GATEWAY_ERROR: "PAYMENT_GATEWAY_ERROR",
+  WEBHOOK_SIGNATURE_INVALID: "WEBHOOK_SIGNATURE_INVALID",
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

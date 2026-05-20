@@ -16,6 +16,7 @@ import type { Config } from "./config.js";
 import { SERVICE_NAME } from "./config.js";
 import { adminRouter } from "./routes/admin.js";
 import { authRouter } from "./routes/auth.js";
+import { internalRouter } from "./routes/internal.js";
 import { jwksRouter } from "./routes/jwks.js";
 import { meRouter } from "./routes/me.js";
 
@@ -71,6 +72,7 @@ export function createServer(opts: CreateServerOptions): Express {
   app.use(authRouter({ prisma, redis, config, keys, logger }));
   app.use(meRouter({ prisma, redis, config, keys, logger }));
   app.use(adminRouter({ prisma, redis, config, keys, logger }));
+  app.use(internalRouter({ prisma, redis, config, logger }));
 
   // routes/handlers go here as endpoints come online
 

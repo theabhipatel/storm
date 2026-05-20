@@ -17,6 +17,7 @@ import { searchRouter } from "./routes/search.js";
 import { homeRouter } from "./routes/home.js";
 import { categoryRouter } from "./routes/category.js";
 import { cartRouter } from "./routes/cart.js";
+import { orderRouter } from "./routes/order.js";
 import { wishlistRouter } from "./routes/wishlist.js";
 import { recommendationsRouter } from "./routes/recommendations.js";
 
@@ -69,6 +70,7 @@ export function createServer(opts: {
   app.use(categoryRouter(config));
   app.use(homeRouter(config, cache));
   app.use(cartRouter(config));
+  app.use(orderRouter(config));
   app.use(wishlistRouter(config));
   app.use(recommendationsRouter(config));
 
