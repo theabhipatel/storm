@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 
 import { ProductGallery } from "../../../components/domain/ProductGallery";
 import { VariantSelector } from "../../../components/domain/VariantSelector";
+import { AddToCartButton } from "../../../features/cart/AddToCartButton";
+import { ProductRecsWidget } from "../../../features/recs/ProductRecsWidget";
 import { formatINR } from "../../../lib/format";
 import { renderMarkdownSafe } from "../../../lib/markdown";
 import { fetchProductBySlug } from "../../../lib/serverFetch";
@@ -83,19 +85,24 @@ export default async function ProductDetailPage({
             currency={product.currency}
           />
 
-          {/* Stock signal — wired on Day 6 when inventory-service comes online. */}
-          <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-            Live stock + delivery estimates arrive in Day 6.
-          </div>
+          {product.stock.inStock ? (
+            <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
+              In stock — usually ships within 3 business days.
+            </p>
+          ) : (
+            <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-900">
+              Out of stock right now.
+            </p>
+          )}
 
-          <button
-            type="button"
-            disabled
-            className="w-full cursor-not-allowed rounded-md bg-neutral-900 px-4 py-3 text-sm font-semibold text-white opacity-60"
-            title="Cart wiring lands on Day 6"
-          >
-            Add to cart (coming soon)
-          </button>
+          <AddToCartButton
+            productId={product.id}
+            sku={product.sku}
+            slug={product.slug}
+            name={product.name}
+            basePrice={product.basePrice}
+            inStock={product.stock.inStock}
+          />
 
           {attributes.length > 0 && (
             <section>
@@ -132,12 +139,7 @@ export default async function ProductDetailPage({
       )}
 
       <section className="mt-10">
-        <h2 className="mb-2 text-base font-semibold text-neutral-900">
-          You might also like
-        </h2>
-        <div className="rounded-md border border-dashed border-neutral-300 p-6 text-sm text-neutral-500">
-          Recommendations arrive in Day 6 once recommendation-service is wired.
-        </div>
+        <ProductRecsWidget productId={product.id} />
       </section>
     </main>
   );

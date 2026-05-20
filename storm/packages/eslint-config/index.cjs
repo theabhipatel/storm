@@ -49,5 +49,12 @@ module.exports = {
       },
     ],
   },
-  ignorePatterns: ["dist/", "build/", ".next/", "coverage/", "node_modules/"],
+  ignorePatterns: [
+    "dist/",
+    "build/",
+    ".next/",
+    "coverage/",
+    "node_modules/",
+    "src/generated/",
+  ],
 };

@@ -415,10 +415,56 @@ export function productService(prisma: PrismaClient) {
     });
   }
 
+  async function lookupBySkus(skus: string[]) {
+    if (skus.length === 0) return [];
+    const rows = await prisma.product.findMany({
+      where: { sku: { in: skus } },
+      include: {
+        media: { where: { isPrimary: true }, take: 1 },
+      },
+    });
+    return rows.map((r) => ({
+      id: r.id,
+      sku: r.sku,
+      slug: r.slug,
+      name: r.name,
+      brandId: r.brandId,
+      categoryId: r.categoryId,
+      basePrice: r.basePrice,
+      currency: r.currency,
+      status: r.status,
+      primaryMediaId: r.media[0]?.mediaId ?? null,
+      updatedAt: r.updatedAt.toISOString(),
+    }));
+  }
+
+  async function lookupByIds(ids: string[]) {
+    if (ids.length === 0) return [];
+    const rows = await prisma.product.findMany({
+      where: { id: { in: ids } },
+      include: { media: { where: { isPrimary: true }, take: 1 } },
+    });
+    return rows.map((r) => ({
+      id: r.id,
+      sku: r.sku,
+      slug: r.slug,
+      name: r.name,
+      brandId: r.brandId,
+      categoryId: r.categoryId,
+      basePrice: r.basePrice,
+      currency: r.currency,
+      status: r.status,
+      primaryMediaId: r.media[0]?.mediaId ?? null,
+      updatedAt: r.updatedAt.toISOString(),
+    }));
+  }
+
   return {
     list,
     getById,
     getBySlugPublished,
+    lookupBySkus,
+    lookupByIds,
     create,
     update,
     addVariant,

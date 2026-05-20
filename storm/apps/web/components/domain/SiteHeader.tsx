@@ -9,6 +9,7 @@ import {
   useAuthBootstrapped,
 } from "../../features/auth/auth.hooks";
 import { useLazyAutocompleteQuery } from "../../features/search/search.api";
+import { useCart } from "../../features/cart/useCart";
 import { formatINR } from "../../lib/format";
 
 const DEBOUNCE_MS = 150;
@@ -167,6 +168,10 @@ export function SiteHeader() {
           )}
         </div>
         <nav className="flex items-center gap-3 text-sm">
+          <CartIcon />
+          <Link href="/wishlist" className="text-neutral-700 hover:text-neutral-900">
+            Wishlist
+          </Link>
           {!bootstrapped ? (
             <span className="text-neutral-400">…</span>
           ) : user ? (
@@ -189,5 +194,23 @@ export function SiteHeader() {
         </nav>
       </div>
     </header>
+  );
+}
+
+function CartIcon() {
+  const { itemCount } = useCart();
+  return (
+    <Link
+      href="/cart"
+      aria-label={`Cart, ${itemCount} item${itemCount === 1 ? "" : "s"}`}
+      className="relative inline-flex items-center gap-1 rounded-md px-2 py-1 text-neutral-700 hover:text-neutral-900"
+    >
+      <span aria-hidden="true">Cart</span>
+      {itemCount > 0 && (
+        <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-neutral-900 px-1.5 text-xs font-semibold text-white">
+          {itemCount > 99 ? "99+" : itemCount}
+        </span>
+      )}
+    </Link>
   );
 }

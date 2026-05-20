@@ -1,11 +1,88 @@
 // inventory service Prisma schema.
-// Entities are added on the owning service's day.
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../src/generated/client"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+enum ReservationStatus {
+  active
+  confirmed
+  released
+}
+
+model StockItem {
+  sku                String   @id
+  productId          String   @map("product_id") @db.Uuid
+  productName        String   @default("") @map("product_name")
+  quantityOnHand     Int      @default(0) @map("quantity_on_hand")
+  quantityReserved   Int      @default(0) @map("quantity_reserved")
+  lowStockThreshold  Int      @default(5) @map("low_stock_threshold")
+  version            Int      @default(0)
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  reservations Reservation[]
+  movements   StockMovement[]
+
+  @@index([productId])
+  @@index([lowStockThreshold])
+  @@map("stock_items")
+}
+
+model Reservation {
+  id        String            @id @db.Uuid
+  sku       String
+  qty       Int
+  orderId   String            @map("order_id") @db.Uuid
+  status    ReservationStatus @default(active)
+  createdAt DateTime          @default(now()) @map("created_at")
+  expiresAt DateTime          @map("expires_at")
+  updatedAt DateTime          @updatedAt @map("updated_at")
+
+  stockItem StockItem @relation(fields: [sku], references: [sku], onDelete: Restrict)
+
+  @@index([status, expiresAt])
+  @@index([orderId])
+  @@index([sku])
+  @@map("reservations")
+}
+
+model StockMovement {
+  id            String   @id @db.Uuid
+  sku           String
+  delta         Int
+  reason        String
+  reservationId String?  @map("reservation_id") @db.Uuid
+  occurredAt    DateTime @default(now()) @map("occurred_at")
+
+  stockItem StockItem @relation(fields: [sku], references: [sku], onDelete: Restrict)
+
+  @@index([sku, occurredAt])
+  @@map("stock_movements")
+}
+
+model Outbox {
+  id          String    @id @db.Uuid
+  aggregateId String    @map("aggregate_id")
+  eventType   String    @map("event_type")
+  payload     Json
+  createdAt   DateTime  @default(now()) @map("created_at")
+  publishedAt DateTime? @map("published_at")
+
+  @@index([publishedAt, createdAt])
+  @@map("outbox")
+}
+
+model ProcessedEvent {
+  eventId    String   @id @map("event_id")
+  eventType  String   @map("event_type")
+  processedAt DateTime @default(now()) @map("processed_at")
+
+  @@map("processed_events")
 }

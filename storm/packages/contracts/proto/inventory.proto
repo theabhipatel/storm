@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package storm.inventory.v1;
+
+service InventoryService {
+  rpc Reserve(ReserveRequest) returns (ReserveResponse);
+  rpc ConfirmReservation(ConfirmReservationRequest) returns (ConfirmReservationResponse);
+  rpc Release(ReleaseRequest) returns (ReleaseResponse);
+  rpc Restock(RestockRequest) returns (RestockResponse);
+  rpc GetStock(GetStockRequest) returns (GetStockResponse);
+}
+
+message ReserveItem {
+  string sku = 1;
+  int32 qty = 2;
+}
+
+message ReserveRequest {
+  repeated ReserveItem items = 1;
+  string order_id = 2;
+  int32 ttl_seconds = 3;
+}
+
+message ReserveRejection {
+  string sku = 1;
+  int32 requested = 2;
+  int32 available = 3;
+}
+
+message ReserveResponse {
+  // Either reservation_id is set OR rejections is non-empty.
+  string reservation_id = 1;
+  string expires_at = 2; // ISO 8601
+  repeated ReserveRejection rejections = 3;
+}
+
+message ConfirmReservationRequest {
+  string reservation_id = 1;
+}
+
+message ConfirmReservationResponse {
+  bool confirmed = 1;
+}
+
+message ReleaseRequest {
+  string reservation_id = 1;
+  string reason = 2;
+}
+
+message ReleaseResponse {
+  bool released = 1;
+}
+
+message RestockRequest {
+  string order_id = 1;
+  string reason = 2;
+}
+
+message RestockResponse {
+  bool restocked = 1;
+}
+
+message GetStockRequest {
+  repeated string skus = 1;
+}
+
+message StockEntry {
+  string sku = 1;
+  string product_id = 2;
+  int32 quantity_on_hand = 3;
+  int32 quantity_reserved = 4;
+  int32 quantity_available = 5;
+  bool in_stock = 6;
+}
+
+message GetStockResponse {
+  repeated StockEntry items = 1;
+}

@@ -16,6 +16,9 @@ import { productRouter } from "./routes/product.js";
 import { searchRouter } from "./routes/search.js";
 import { homeRouter } from "./routes/home.js";
 import { categoryRouter } from "./routes/category.js";
+import { cartRouter } from "./routes/cart.js";
+import { wishlistRouter } from "./routes/wishlist.js";
+import { recommendationsRouter } from "./routes/recommendations.js";
 
 export interface ReadyChecks {
   [name: string]: () => Promise<boolean>;
@@ -65,6 +68,9 @@ export function createServer(opts: {
   app.use(searchRouter(config));
   app.use(categoryRouter(config));
   app.use(homeRouter(config, cache));
+  app.use(cartRouter(config));
+  app.use(wishlistRouter(config));
+  app.use(recommendationsRouter(config));
 
   app.use(notFoundHandler());
   app.use(errorHandler(logger));

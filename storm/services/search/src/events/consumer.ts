@@ -2,11 +2,13 @@ import { Kafka, type Consumer, type EachMessagePayload } from "kafkajs";
 import type { Logger } from "@storm/logger";
 import {
   CatalogEventTypes,
+  InventoryEventTypes,
   ProductPublishedPayload,
   ProductUpdatedPayload,
   ProductArchivedPayload,
   CategoryEventPayload,
   BrandEventPayload,
+  InventoryStockChangedPayload,
   EventEnvelopeSchema,
   type EventEnvelope,
 } from "@storm/contracts";
@@ -34,6 +36,7 @@ const SUBSCRIBED_TOPICS = [
   CatalogEventTypes.ProductArchived,
   CatalogEventTypes.CategoryUpdated,
   CatalogEventTypes.BrandUpdated,
+  InventoryEventTypes.StockChanged,
 ];
 
 export interface SearchConsumer {
@@ -174,6 +177,16 @@ async function dispatch(envelope: EventEnvelope, deps: ConsumerDeps): Promise<vo
       deps.logger.info(
         { brandId: payload.brandId, updated: updated.body.updated ?? 0 },
         "brand_denormalized",
+      );
+      return;
+    }
+    case InventoryEventTypes.StockChanged: {
+      const payload = InventoryStockChangedPayload.parse(envelope.payload);
+      const available = payload.quantityOnHand - payload.quantityReserved;
+      await deps.productDocs.patchDoc(payload.productId, { inStock: available > 0 });
+      deps.logger.info(
+        { productId: payload.productId, inStock: available > 0 },
+        "search_inStock_updated",
       );
       return;
     }

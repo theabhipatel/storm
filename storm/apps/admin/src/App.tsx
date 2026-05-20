@@ -8,6 +8,9 @@ import { CatalogProductFormPage } from "./pages/CatalogProductFormPage";
 import { CatalogProductsListPage } from "./pages/CatalogProductsListPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
+import { InventoryAlertsPage } from "./pages/InventoryAlertsPage";
+import { InventoryDetailPage } from "./pages/InventoryDetailPage";
+import { InventoryListPage } from "./pages/InventoryListPage";
 import { LoginPage } from "./pages/LoginPage";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { UserDetailPage } from "./pages/UserDetailPage";
@@ -112,6 +115,30 @@ export function App() {
         element={
           <RequireAdmin>
             <CatalogBrandsPage />
+          </RequireAdmin>
+        }
+      />
+      <Route
+        path="/inventory"
+        element={
+          <RequireAdmin>
+            <InventoryListPage />
+          </RequireAdmin>
+        }
+      />
+      <Route
+        path="/inventory/alerts"
+        element={
+          <RequireAdmin>
+            <InventoryAlertsPage />
+          </RequireAdmin>
+        }
+      />
+      <Route
+        path="/inventory/:sku"
+        element={
+          <RequireAdmin>
+            <InventoryDetailPage />
           </RequireAdmin>
         }
       />

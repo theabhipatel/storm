@@ -5,18 +5,27 @@ import {
   authContext,
   errorHandler,
   notFoundHandler,
+  idempotencyKey,
 } from "@storm/middlewares";
 import type { Logger } from "@storm/logger";
 
 import { SERVICE_NAME } from "./config.js";
+import { cartRouter } from "./routes/cart.js";
+import type { CartService } from "./services/cartService.js";
 
 export interface ReadyChecks {
   [name: string]: () => Promise<boolean>;
 }
 
-export function createServer(opts: { logger: Logger; readyChecks?: ReadyChecks }): Express {
+export interface CreateServerOptions {
+  logger: Logger;
+  service: CartService;
+  readyChecks?: ReadyChecks;
+}
+
+export function createServer(opts: CreateServerOptions): Express {
   const app = express();
-  const { logger, readyChecks = {} } = opts;
+  const { logger, service, readyChecks = {} } = opts;
 
   app.disable("x-powered-by");
   app.use(express.json({ limit: "1mb" }));
@@ -47,6 +56,9 @@ export function createServer(opts: { logger: Logger; readyChecks?: ReadyChecks }
       res.status(503).json({ status: "not_ready", checks: results });
     }
   });
+
+  app.use(idempotencyKey({ required: true }));
+  app.use(cartRouter(service));
 
   app.use(notFoundHandler());
   app.use(errorHandler(logger));

@@ -1,12 +1,20 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef } from "react";
 
 import { AuthShell } from "../../../../components/domain/AuthShell";
 import { useConfirmEmailChangeMutation } from "../../../../features/account/account.api";
 
 export default function ConfirmEmailChangePage() {
+  return (
+    <Suspense fallback={<AuthShell title="Confirm new email">Loading…</AuthShell>}>
+      <ConfirmEmailChangeInner />
+    </Suspense>
+  );
+}
+
+function ConfirmEmailChangeInner() {
   const params = useSearchParams();
   const token = params?.get("token") ?? "";
   const [confirm, { isLoading, isSuccess, error }] = useConfirmEmailChangeMutation();

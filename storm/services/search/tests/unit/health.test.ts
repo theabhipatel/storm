@@ -3,10 +3,18 @@ import request from "supertest";
 import { createLogger } from "@storm/logger";
 
 import { createServer } from "../../src/server.js";
+import type { Config } from "../../src/config.js";
+import type { OpenSearchClient } from "../../src/infra/opensearch.js";
 
 describe("search service health endpoints", () => {
   const logger = createLogger({ service: "search-test", pretty: false, level: "error" });
-  const app = createServer({ logger });
+  const config = {
+    productsIndexAlias: "products",
+    catalogBaseUrl: "http://localhost",
+    mediaBaseUrl: "http://localhost",
+  } as unknown as Config;
+  const os = {} as unknown as OpenSearchClient;
+  const app = createServer({ logger, config, os });
 
   it("GET /health returns 200 ok", async () => {
     const res = await request(app).get("/health");

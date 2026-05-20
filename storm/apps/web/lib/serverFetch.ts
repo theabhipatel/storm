@@ -20,6 +20,7 @@ export interface ProductDetailResponse extends ProductDetail {
   category: { id: string; name: string; slug: string } | null;
   breadcrumb: BreadcrumbItem[];
   mediaAssets: MediaAssetDto[];
+  stock: { sku: string; available: number; inStock: boolean };
 }
 
 export interface HomeCategoryCard {

@@ -21,8 +21,13 @@
     "./dto": {
       "types": "./dist/dto/index.d.ts",
       "import": "./dist/dto/index.js"
+    },
+    "./proto": {
+      "types": "./dist/proto/index.d.ts",
+      "import": "./dist/proto/index.js"
     }
   },
+  "files": ["dist", "proto"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "lint": "eslint src --max-warnings=0",
