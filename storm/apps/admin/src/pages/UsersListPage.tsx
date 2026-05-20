@@ -3,8 +3,10 @@ import { useNavigate } from "react-router-dom";
 
 import { AdminShell } from "../components/AdminShell";
 import { DataTable, type DataTableColumn } from "../components/DataTable";
+import { ExportButton } from "../components/ExportButton";
 import { useListUsersQuery } from "../features/users/users.api";
 import type { AdminUser, UserListFilters } from "../features/users/users.types";
+import { formatDateShortIST } from "../lib/format";
 
 export function UsersListPage() {
   const navigate = useNavigate();
@@ -33,15 +35,23 @@ export function UsersListPage() {
       {
         key: "createdAt",
         header: "Created",
-        render: (r) => new Date(r.createdAt).toLocaleDateString("en-IN"),
+        render: (r) => formatDateShortIST(r.createdAt),
         width: "140px",
       },
     ],
     [],
   );
 
+  const exportFilters: Record<string, string> = {};
+  if (filters.q) exportFilters["q"] = filters.q;
+  if (filters.role) exportFilters["role"] = filters.role;
+  if (filters.blocked) exportFilters["blocked"] = filters.blocked;
+
   return (
     <AdminShell title="Users">
+      <div className="mb-4 flex items-center justify-end">
+        <ExportButton kind="users" filters={exportFilters} />
+      </div>
       <div className="mb-4 flex flex-wrap items-end gap-3 rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
         <div className="flex-1 min-w-[200px]">
           <label className="text-xs font-medium uppercase tracking-wide text-neutral-500">

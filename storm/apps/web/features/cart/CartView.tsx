@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 
+import { EmptyState } from "../../components/domain/EmptyState";
+import { CartSkeleton } from "../../components/ui/Skeletons";
 import { formatINR } from "../../lib/format";
+import { toast } from "../../lib/toast";
 import type { Cart, CartItem } from "@storm/contracts";
 import { PopularRecsWidget } from "../recs/PopularRecsWidget";
 import {
@@ -17,20 +20,17 @@ export function CartView() {
   const [removeItem] = useRemoveCartItemMutation();
 
   if (isLoading) {
-    return <p className="py-12 text-center text-neutral-500">Loading your cart…</p>;
+    return <CartSkeleton />;
   }
   if (!data || data.items.length === 0) {
     return (
       <div className="space-y-8">
-        <div className="rounded-md border border-dashed border-neutral-300 p-10 text-center">
-          <p className="text-neutral-700">Your cart is empty.</p>
-          <Link
-            href="/"
-            className="mt-3 inline-block rounded-md bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
-          >
-            Browse products
-          </Link>
-        </div>
+        <EmptyState
+          title="Your cart is empty"
+          description="Looks like you haven't added anything yet."
+          ctaLabel="Browse products"
+          ctaHref="/"
+        />
         <PopularRecsWidget />
       </div>
     );
@@ -44,10 +44,19 @@ export function CartView() {
             key={item.sku}
             item={item}
             onQty={async (qty) => {
-              await updateItem({ sku: item.sku, body: { qty } });
+              try {
+                await updateItem({ sku: item.sku, body: { qty } }).unwrap();
+              } catch {
+                toast.error("Could not update quantity");
+              }
             }}
             onRemove={async () => {
-              await removeItem({ sku: item.sku });
+              try {
+                await removeItem({ sku: item.sku }).unwrap();
+                toast.show("Removed from cart");
+              } catch {
+                toast.error("Could not remove item");
+              }
             }}
             disabled={isFetching}
           />

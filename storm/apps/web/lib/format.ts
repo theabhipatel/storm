@@ -1,8 +1,15 @@
-export function formatINR(paise: number, currency = "INR"): string {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(paise / 100);
-}
+export {
+  formatINR,
+  formatINRCompact,
+  formatDateIST,
+  formatDateShortIST,
+  formatTimeIST,
+  formatIndiaPhone,
+  isValidIndiaPhone,
+  isValidIndiaPincode,
+  normalizeIndiaPhone,
+  indiaPhoneSchema,
+  indiaPincodeSchema,
+  INDIA_PHONE_REGEX,
+  INDIA_PINCODE_REGEX,
+} from "@storm/contracts/format";

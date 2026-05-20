@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import { useAuthBootstrapped, useCurrentUser } from "./features/auth/auth.hooks";
+import { AuditPage } from "./pages/AuditPage";
 import { CatalogBrandsPage } from "./pages/CatalogBrandsPage";
 import { CatalogCategoriesPage } from "./pages/CatalogCategoriesPage";
 import { CatalogProductFormPage } from "./pages/CatalogProductFormPage";
@@ -12,6 +13,7 @@ import { InventoryAlertsPage } from "./pages/InventoryAlertsPage";
 import { InventoryDetailPage } from "./pages/InventoryDetailPage";
 import { InventoryListPage } from "./pages/InventoryListPage";
 import { LoginPage } from "./pages/LoginPage";
+import { NotificationsPage } from "./pages/NotificationsPage";
 import { OrderDetailPage } from "./pages/OrderDetailPage";
 import { OrdersListPage } from "./pages/OrdersListPage";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
@@ -157,6 +159,22 @@ export function App() {
         element={
           <RequireAdmin>
             <OrderDetailPage />
+          </RequireAdmin>
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <RequireAdmin>
+            <NotificationsPage />
+          </RequireAdmin>
+        }
+      />
+      <Route
+        path="/audit"
+        element={
+          <RequireAdmin>
+            <AuditPage />
           </RequireAdmin>
         }
       />

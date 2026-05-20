@@ -6,6 +6,7 @@ import type { SearchHit, SearchResponse } from "@storm/contracts";
 
 import { useFacetsQuery, useSearchQuery } from "../../features/search/search.api";
 import type { SearchQueryArgs } from "../../features/search/search.api";
+import { ProductGridSkeleton } from "../ui/Skeletons";
 import { FilterSidebar } from "./FilterSidebar";
 import { ProductGrid } from "./ProductCard";
 import { SortDropdown } from "./SortDropdown";
@@ -106,6 +107,8 @@ export function ProductListing({ initial, forcedCategoryId, surface = "search" }
           <div className="rounded-md border border-red-200 bg-red-50 p-6 text-sm text-red-900">
             Failed to load results. Try again.
           </div>
+        ) : accum.length === 0 && isFetching ? (
+          <ProductGridSkeleton />
         ) : accum.length === 0 && !isFetching ? (
           <EmptyState
             surface={surface}

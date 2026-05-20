@@ -9,9 +9,11 @@ import type {
   CreateOrderResponse,
 } from "@storm/contracts";
 
+import { AddressForm } from "../../components/domain/AddressForm";
 import { formatINR } from "../../lib/format";
 import { useCurrentUser } from "../auth/auth.hooks";
 import {
+  useCreateAddressMutation,
   useListAddressesQuery,
   useMeProfileQuery,
 } from "../account/account.api";
@@ -236,17 +238,7 @@ function AddressPicker(props: {
 }) {
   if (props.isLoading) return <p className="text-sm text-neutral-500">Loading addresses…</p>;
   if (props.addresses.length === 0) {
-    return (
-      <div className="space-y-2 text-sm text-neutral-700">
-        <p>You don't have a saved address yet.</p>
-        <Link
-          href="/account/addresses?return=/checkout"
-          className="inline-block rounded-md bg-neutral-900 px-3 py-1.5 text-white"
-        >
-          Add an address
-        </Link>
-      </div>
-    );
+    return <InlineFirstAddress onCreated={(id) => props.onSelect(id)} />;
   }
   return (
     <ul className="space-y-2">
@@ -359,6 +351,34 @@ function ErrorPanel({ message }: { message: string }) {
       >
         Back to cart
       </Link>
+    </div>
+  );
+}
+
+function InlineFirstAddress({ onCreated }: { onCreated: (id: string) => void }) {
+  const [createAddress, state] = useCreateAddressMutation();
+  return (
+    <div className="space-y-3 text-sm">
+      <p className="text-neutral-700">
+        Add your first delivery address to continue.
+      </p>
+      <AddressForm
+        submitLabel="Save and use this address"
+        submittingLabel="Saving…"
+        isSubmitting={state.isLoading}
+        error={
+          (state.error as { data?: { error?: { code?: string; message?: string } } })
+            ?.data?.error
+        }
+        allowSetDefault
+        onSubmit={async (values) => {
+          const created = await createAddress({
+            ...values,
+            isDefault: true,
+          }).unwrap();
+          onCreated(created.address.id);
+        }}
+      />
     </div>
   );
 }

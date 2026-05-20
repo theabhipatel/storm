@@ -9,6 +9,10 @@ import {
 import type { Logger } from "@storm/logger";
 
 import { SERVICE_NAME, type Config } from "./config.js";
+import { auditRouter } from "./routes/audit.js";
+import { dashboardRouter } from "./routes/dashboard.js";
+import { exportsRouter } from "./routes/exports.js";
+import { adminNotificationsRouter } from "./routes/notifications.js";
 import { ordersRouter } from "./routes/orders.js";
 
 export interface ReadyChecks {
@@ -53,6 +57,10 @@ export function createServer(opts: {
     }
   });
 
+  app.use(dashboardRouter({ config, logger }));
+  app.use(auditRouter({ config, logger }));
+  app.use(exportsRouter({ config, logger }));
+  app.use(adminNotificationsRouter({ config, logger }));
   app.use(ordersRouter({ config, logger }));
 
   app.use(notFoundHandler());

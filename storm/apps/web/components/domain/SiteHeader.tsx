@@ -11,10 +11,21 @@ import {
 import { useLazyAutocompleteQuery } from "../../features/search/search.api";
 import { useCart } from "../../features/cart/useCart";
 import { formatINR } from "../../lib/format";
+import { MobileDrawer } from "./MobileDrawer";
+
+interface DrawerCategory {
+  id: string;
+  name: string;
+  slug: string;
+}
 
 const DEBOUNCE_MS = 150;
 
-export function SiteHeader() {
+export function SiteHeader({
+  drawerCategories = [],
+}: {
+  drawerCategories?: DrawerCategory[];
+}) {
   const router = useRouter();
   const user = useCurrentUser();
   const bootstrapped = useAuthBootstrapped();
@@ -84,7 +95,8 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-neutral-200 bg-white">
-      <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6 lg:px-8">
+        <MobileDrawer categories={drawerCategories} />
         <Link
           href="/"
           className="text-lg font-semibold tracking-tight text-neutral-900"

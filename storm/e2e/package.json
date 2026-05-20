@@ -1,0 +1,16 @@
+{
+  "name": "@storm/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:smoke": "playwright test tests/smoke",
+    "test:golden": "playwright test tests/golden-path",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.47.2",
+    "typescript": "5.5.4"
+  }
+}

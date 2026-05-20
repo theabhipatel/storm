@@ -22,6 +22,10 @@
       "types": "./dist/dto/index.d.ts",
       "import": "./dist/dto/index.js"
     },
+    "./format": {
+      "types": "./dist/format/index.d.ts",
+      "import": "./dist/format/index.js"
+    },
     "./proto": {
       "types": "./dist/proto/index.d.ts",
       "import": "./dist/proto/index.js"

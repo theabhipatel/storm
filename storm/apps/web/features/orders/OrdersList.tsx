@@ -4,7 +4,9 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { OrderStatus, OrderSummary } from "@storm/contracts";
 
-import { formatINR } from "../../lib/format";
+import { EmptyState } from "../../components/domain/EmptyState";
+import { OrderListSkeleton } from "../../components/ui/Skeletons";
+import { formatDateShortIST, formatINR } from "../../lib/format";
 import { useListOrdersQuery } from "./orders.api";
 import { OrderStatusBadge } from "./OrderStatusBadge";
 
@@ -58,19 +60,16 @@ export function OrdersList() {
   }
 
   if (isLoading) {
-    return <p className="py-10 text-center text-neutral-500">Loading your orders…</p>;
+    return <OrderListSkeleton />;
   }
   if (accumulated.length === 0) {
     return (
-      <div className="rounded-md border border-dashed border-neutral-300 p-10 text-center">
-        <p className="text-neutral-700">You haven&apos;t placed any orders yet.</p>
-        <Link
-          href="/"
-          className="mt-3 inline-block rounded-md bg-neutral-900 px-4 py-2 text-sm font-semibold text-white"
-        >
-          Start shopping
-        </Link>
-      </div>
+      <EmptyState
+        title="No orders yet"
+        description="When you place an order, it'll show up here."
+        ctaLabel="Start shopping"
+        ctaHref="/"
+      />
     );
   }
   return (
@@ -128,7 +127,7 @@ export function OrdersList() {
                     {order.itemsCount === 1 ? "" : "s"}
                   </p>
                   <p className="text-xs text-neutral-500">
-                    Placed on {new Date(order.createdAt).toLocaleDateString("en-IN")}
+                    Placed on {formatDateShortIST(order.createdAt)}
                   </p>
                 </div>
               </div>

@@ -12,6 +12,8 @@ const NAV = [
   { to: "/inventory", label: "Inventory" },
   { to: "/inventory/alerts", label: "Low stock" },
   { to: "/orders", label: "Orders" },
+  { to: "/notifications", label: "Notifications" },
+  { to: "/audit", label: "Audit" },
 ];
 
 export function AdminShell({

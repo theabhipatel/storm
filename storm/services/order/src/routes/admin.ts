@@ -23,6 +23,28 @@ export function adminRouter(deps: {
   router.use(requireAdmin());
 
   router.get(
+    "/api/admin/orders/metrics",
+    asyncRoute(async (req, res) => {
+      const fromRaw = typeof req.query["from"] === "string" ? req.query["from"] : undefined;
+      const toRaw = typeof req.query["to"] === "string" ? req.query["to"] : undefined;
+      const from = fromRaw ? new Date(fromRaw) : undefined;
+      const to = toRaw ? new Date(toRaw) : undefined;
+      if ((from && Number.isNaN(from.getTime())) || (to && Number.isNaN(to.getTime()))) {
+        throw new StormError({
+          code: ErrorCodes.VALIDATION_FAILED,
+          message: "Invalid from/to range.",
+          status: 400,
+        });
+      }
+      const metrics = await deps.repo.adminMetrics({
+        ...(from ? { from } : {}),
+        ...(to ? { to } : {}),
+      });
+      res.json(metrics);
+    }),
+  );
+
+  router.get(
     "/api/admin/orders",
     asyncRoute(async (req, res) => {
       const q = AdminOrderListQuerySchema.parse(req.query);

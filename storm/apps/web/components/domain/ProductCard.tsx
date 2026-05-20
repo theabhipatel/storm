@@ -6,6 +6,7 @@ import type { SearchHit } from "@storm/contracts";
 
 import { useCurrentUser } from "../../features/auth/auth.hooks";
 import { formatINR } from "../../lib/format";
+import { ProductImage } from "../ui/ProductImage";
 
 export function ProductCard({ hit }: { hit: SearchHit }) {
   return (
@@ -13,19 +14,11 @@ export function ProductCard({ hit }: { hit: SearchHit }) {
       <WishlistHeart productId={hit.productId} />
       <Link href={`/p/${hit.slug}`} className="flex h-full flex-col p-3">
         <div className="relative aspect-square overflow-hidden rounded bg-neutral-100">
-          {hit.primaryImageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={hit.primaryImageUrl}
-              alt={hit.name}
-              loading="lazy"
-              className="h-full w-full object-cover transition-transform group-hover:scale-105"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-xs text-neutral-400">
-              No image
-            </div>
-          )}
+          <ProductImage
+            src={hit.primaryImageUrl}
+            alt={hit.name}
+            className="h-full w-full object-cover transition-transform group-hover:scale-105"
+          />
           {!hit.inStock && (
             <span className="absolute left-2 top-2 rounded bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-900">
               Out of stock

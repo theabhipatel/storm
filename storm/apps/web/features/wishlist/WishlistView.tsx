@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 
+import { EmptyState } from "../../components/domain/EmptyState";
+import { ProductGridSkeleton } from "../../components/ui/Skeletons";
 import { formatINR } from "../../lib/format";
+import { toast } from "../../lib/toast";
 import {
   useGetWishlistQuery,
   useMoveToCartMutation,
@@ -15,19 +18,16 @@ export function WishlistView() {
   const [removeItem] = useRemoveWishlistItemMutation();
 
   if (isLoading) {
-    return <p className="py-12 text-center text-neutral-500">Loading…</p>;
+    return <ProductGridSkeleton count={6} />;
   }
   if (!data || data.items.length === 0) {
     return (
-      <div className="rounded-md border border-dashed border-neutral-300 p-10 text-center">
-        <p className="text-neutral-700">Your wishlist is empty.</p>
-        <Link
-          href="/"
-          className="mt-3 inline-block rounded-md bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
-        >
-          Browse products
-        </Link>
-      </div>
+      <EmptyState
+        title="No wishlist items yet"
+        description="Save items you love and find them here later."
+        ctaLabel="Browse products"
+        ctaHref="/"
+      />
     );
   }
 
@@ -57,14 +57,28 @@ export function WishlistView() {
             <button
               type="button"
               disabled={!item.available}
-              onClick={() => moveToCart({ sku: item.sku })}
+              onClick={async () => {
+                try {
+                  await moveToCart({ sku: item.sku }).unwrap();
+                  toast.success("Moved to cart");
+                } catch {
+                  toast.error("Could not move to cart");
+                }
+              }}
               className="flex-1 rounded-md bg-neutral-900 px-3 py-2 text-xs font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Move to cart
             </button>
             <button
               type="button"
-              onClick={() => removeItem({ sku: item.sku })}
+              onClick={async () => {
+                try {
+                  await removeItem({ sku: item.sku }).unwrap();
+                  toast.show("Removed from wishlist");
+                } catch {
+                  toast.error("Could not remove");
+                }
+              }}
               className="rounded-md border border-neutral-300 px-3 py-2 text-xs text-neutral-700 hover:bg-neutral-50"
             >
               Remove

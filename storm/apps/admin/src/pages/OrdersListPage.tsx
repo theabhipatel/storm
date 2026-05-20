@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import type { OrderStatus, OrderSummary } from "@storm/contracts";
 
 import { AdminShell } from "../components/AdminShell";
+import { ExportButton } from "../components/ExportButton";
 import { OrderStatusBadge } from "../features/orders/OrderStatusBadge";
 import { useListAdminOrdersQuery } from "../features/orders/orders.api";
 import { formatINR } from "../lib/format";
@@ -66,10 +67,21 @@ export function OrdersListPage() {
     setCursor(data.nextCursor);
   }
 
+  const exportFilters: Record<string, string> = {};
+  if (status) exportFilters["status"] = status;
+  if (q.trim()) exportFilters["q"] = q.trim();
+  const fromIso = toIso(from);
+  if (fromIso) exportFilters["from"] = fromIso;
+  const toIsoVal = toIso(to);
+  if (toIsoVal) exportFilters["to"] = toIsoVal;
+
   return (
     <AdminShell title="Orders">
       <section className="space-y-4">
-        <h1 className="text-xl font-semibold text-neutral-900">Orders</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-semibold text-neutral-900">Orders</h1>
+          <ExportButton kind="orders" filters={exportFilters} />
+        </div>
 
         <div className="flex flex-wrap items-end gap-3 rounded-md border border-neutral-200 bg-white p-3">
           <label className="flex flex-col text-xs text-neutral-600">

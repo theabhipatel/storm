@@ -9,6 +9,7 @@ import {
 import type { Logger } from "@storm/logger";
 
 import { SERVICE_NAME } from "./config.js";
+import { adminNotificationsRouter } from "./routes/admin.js";
 import { invoicesRouter } from "./routes/invoices.js";
 import { notificationsRouter } from "./routes/notifications.js";
 import type { InvoiceStore } from "./services/invoiceStore.js";
@@ -61,6 +62,7 @@ export function createServer(opts: ServerDeps): Express {
 
   app.use(invoicesRouter({ store: opts.invoiceStore }));
   app.use(notificationsRouter({ mongo: opts.mongo }));
+  app.use(adminNotificationsRouter({ mongo: opts.mongo }));
 
   app.use(notFoundHandler());
   app.use(errorHandler(logger));

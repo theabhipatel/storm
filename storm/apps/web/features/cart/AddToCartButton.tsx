@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { toast } from "../../lib/toast";
 import { useCurrentUser } from "../auth/auth.hooks";
 import { useAddCartItemMutation } from "./cart.api";
 import { useAddWishlistItemMutation } from "../wishlist/wishlist.api";
@@ -24,7 +25,6 @@ export function AddToCartButton(props: AddToCartButtonProps) {
   const [addCartItem, { isLoading: addingToCart }] = useAddCartItemMutation();
   const [addWishlistItem] = useAddWishlistItemMutation();
   const [qty, setQty] = useState<number>(props.initialQty ?? 1);
-  const [toast, setToast] = useState<string | null>(null);
 
   const inStock = props.inStock ?? true;
 
@@ -36,9 +36,9 @@ export function AddToCartButton(props: AddToCartButtonProps) {
           ...(props.variantId !== undefined ? { variantId: props.variantId } : {}),
           qty,
         }).unwrap();
-        setToast("Added to cart");
+        toast.success("Added to cart");
       } catch {
-        setToast("Could not add to cart");
+        toast.error("Could not add to cart");
       }
     } else {
       anonCart.addItem({
@@ -54,9 +54,8 @@ export function AddToCartButton(props: AddToCartButtonProps) {
         basePrice: props.basePrice,
         currency: "INR",
       });
-      setToast("Added to cart");
+      toast.success("Added to cart");
     }
-    setTimeout(() => setToast(null), 2200);
   }
 
   async function handleAddToWishlist(): Promise<void> {
@@ -66,11 +65,10 @@ export function AddToCartButton(props: AddToCartButtonProps) {
     }
     try {
       await addWishlistItem({ sku: props.sku }).unwrap();
-      setToast("Added to wishlist");
+      toast.success("Added to wishlist");
     } catch {
-      setToast("Could not add to wishlist");
+      toast.error("Could not add to wishlist");
     }
-    setTimeout(() => setToast(null), 2200);
   }
 
   return (
@@ -113,14 +111,6 @@ export function AddToCartButton(props: AddToCartButtonProps) {
           ♥
         </button>
       </div>
-      {toast && (
-        <p
-          role="status"
-          className="rounded-md border border-green-200 bg-green-50 px-3 py-1.5 text-xs text-green-800"
-        >
-          {toast}
-        </p>
-      )}
     </div>
   );
 }

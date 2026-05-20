@@ -65,6 +65,16 @@ export interface OrderRepo {
     cursor?: string;
     limit: number;
   }): Promise<{ items: (Order & { items: OrderItem[] })[]; nextCursor: string | null }>;
+  adminMetrics(input: {
+    from?: Date;
+    to?: Date;
+  }): Promise<{
+    count: number;
+    revenuePaise: number;
+    aovPaise: number;
+    cancelledCount: number;
+    currency: string;
+  }>;
   history(orderId: string): Promise<OrderStatusHistory[]>;
   recordTransition(
     tx: Prisma.TransactionClient,
@@ -191,6 +201,43 @@ export function orderRepo(prisma: PrismaClient): OrderRepo {
       const items = rows.slice(0, limit);
       const nextCursor = rows.length > limit ? items[items.length - 1]!.id : null;
       return { items, nextCursor };
+    },
+
+    async adminMetrics({ from, to }) {
+      const where: Prisma.OrderWhereInput = {};
+      if (from || to) {
+        where.createdAt = {};
+        if (from) where.createdAt.gte = from;
+        if (to) where.createdAt.lte = to;
+      }
+      const completedStatuses: OrderStatus[] = [
+        "confirmed",
+        "processing",
+        "shipped",
+        "delivered",
+      ];
+
+      const [agg, cancelledCount] = await Promise.all([
+        prisma.order.aggregate({
+          where: { ...where, status: { in: completedStatuses } },
+          _count: { _all: true },
+          _sum: { totalAmountPaise: true },
+        }),
+        prisma.order.count({
+          where: { ...where, status: "cancelled" },
+        }),
+      ]);
+
+      const count = agg._count._all;
+      const revenuePaise = agg._sum.totalAmountPaise ?? 0;
+      const aovPaise = count > 0 ? Math.round(revenuePaise / count) : 0;
+      return {
+        count,
+        revenuePaise,
+        aovPaise,
+        cancelledCount,
+        currency: "INR",
+      };
     },
 
     async history(orderId) {

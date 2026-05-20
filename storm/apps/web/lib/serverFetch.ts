@@ -61,6 +61,25 @@ export async function fetchProductBySlug(
   return (await res.json()) as ProductDetailResponse;
 }
 
+export interface CategoryNode {
+  id: string;
+  name: string;
+  slug: string;
+  parentId: string | null;
+  children?: CategoryNode[];
+}
+
+export async function fetchCategoryTree(
+  revalidateSeconds = 300,
+): Promise<CategoryNode[]> {
+  const res = await fetch(`${WEB_BFF_URL}/api/categories`, {
+    next: { revalidate: revalidateSeconds, tags: ["categories"] },
+  });
+  if (!res.ok) throw new Error(`web-bff /categories returned ${res.status}`);
+  const body = (await res.json()) as { items: CategoryNode[] };
+  return body.items;
+}
+
 export async function fetchHome(revalidateSeconds = 30): Promise<HomeResponse> {
   const res = await fetch(`${WEB_BFF_URL}/api/home`, {
     next: { revalidate: revalidateSeconds, tags: ["home"] },

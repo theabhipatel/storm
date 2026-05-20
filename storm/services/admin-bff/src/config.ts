@@ -7,6 +7,8 @@ const ConfigSchema = z.object({
   orderBaseUrl: z.string().url().default("http://localhost:3006"),
   paymentBaseUrl: z.string().url().default("http://localhost:3007"),
   inventoryBaseUrl: z.string().url().default("http://localhost:3004"),
+  identityBaseUrl: z.string().url().default("http://localhost:3001"),
+  notificationBaseUrl: z.string().url().default("http://localhost:3009"),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -19,6 +21,8 @@ export function loadConfig(): Config {
     orderBaseUrl: process.env["ORDER_BASE_URL"],
     paymentBaseUrl: process.env["PAYMENT_BASE_URL"],
     inventoryBaseUrl: process.env["INVENTORY_BASE_URL"],
+    identityBaseUrl: process.env["IDENTITY_BASE_URL"],
+    notificationBaseUrl: process.env["NOTIFICATION_BASE_URL"],
   });
 }
 
