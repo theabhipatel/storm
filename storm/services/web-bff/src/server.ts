@@ -5,7 +5,10 @@ import {
   authContext,
   errorHandler,
   notFoundHandler,
+  securityHeaders,
+  corsAllowlist,
 } from "@storm/middlewares";
+import { metricsHandler } from "@storm/observability";
 import type { Logger } from "@storm/logger";
 
 import type { Config } from "./config.js";
@@ -37,6 +40,13 @@ export function createServer(opts: {
 
   app.disable("x-powered-by");
   app.use(express.json({ limit: "1mb" }));
+  app.use(securityHeaders({ apiCsp: true }));
+  app.use(
+    corsAllowlist({
+      allowedOrigins: config.allowedOrigins,
+      credentialsRoutes: [/^\/api\/auth\//],
+    }),
+  );
   app.use(requestContext());
   app.use(requestLogger(logger));
   app.use(authContext());
@@ -44,6 +54,8 @@ export function createServer(opts: {
   app.get("/health", (_req, res) => {
     res.status(200).json({ status: "ok", service: SERVICE_NAME });
   });
+
+  app.get("/metrics", metricsHandler(SERVICE_NAME));
 
   app.get("/ready", async (_req, res) => {
     const results: Record<string, "ok" | "fail"> = {};

@@ -9,6 +9,10 @@ const ConfigSchema = z.object({
   inventoryBaseUrl: z.string().url().default("http://localhost:3004"),
   identityBaseUrl: z.string().url().default("http://localhost:3001"),
   notificationBaseUrl: z.string().url().default("http://localhost:3009"),
+  allowedOrigins: z
+    .string()
+    .default("http://localhost:3300,http://localhost:5173")
+    .transform((v) => v.split(",").map((s) => s.trim()).filter(Boolean)),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -23,6 +27,7 @@ export function loadConfig(): Config {
     inventoryBaseUrl: process.env["INVENTORY_BASE_URL"],
     identityBaseUrl: process.env["IDENTITY_BASE_URL"],
     notificationBaseUrl: process.env["NOTIFICATION_BASE_URL"],
+    allowedOrigins: process.env["ALLOWED_ORIGINS"],
   });
 }
 

@@ -22,6 +22,7 @@
     "@storm/contracts": "workspace:*",
     "@storm/logger": "workspace:*",
     "@storm/middlewares": "workspace:*",
+    "@storm/observability": "workspace:*",
     "argon2": "0.41.1",
     "cookie-parser": "1.4.7",
     "express": "4.21.0",

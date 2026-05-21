@@ -20,6 +20,7 @@
     "@storm/contracts": "workspace:*",
     "@storm/logger": "workspace:*",
     "@storm/middlewares": "workspace:*",
+    "@storm/observability": "workspace:*",
     "@prisma/client": "5.20.0",
     "express": "4.21.0",
     "kafkajs": "2.2.4",

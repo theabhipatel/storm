@@ -1,0 +1,43 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: policy-controller
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://sigstore.github.io/helm-charts
+    chart: policy-controller
+    targetRevision: 0.10.0
+  destination:
+    name: in-cluster
+    namespace: cosign-system
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: ["CreateNamespace=true", "ServerSideApply=true"]
+---
+# Cluster-wide policy: only images signed by the Storm CI OIDC identity may run
+# in the `storm` namespace.
+apiVersion: policy.sigstore.dev/v1beta1
+kind: ClusterImagePolicy
+metadata:
+  name: storm-keyless
+spec:
+  images:
+    - glob: "*.dkr.ecr.*.amazonaws.com/storm/*"
+  authorities:
+    - keyless:
+        url: https://fulcio.sigstore.dev
+        identities:
+          - issuer: https://token.actions.githubusercontent.com
+            subject: "https://github.com/storm/storm/.github/workflows/cd.yml@refs/heads/main"
+      ctlog:
+        url: https://rekor.sigstore.dev
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: storm
+  labels:
+    policy.sigstore.dev/include: "true"
+    linkerd.io/inject: enabled

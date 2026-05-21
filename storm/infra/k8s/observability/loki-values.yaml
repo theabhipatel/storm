@@ -1,0 +1,37 @@
+# Helm values for grafana/loki (single-binary mode for dev, scalable later).
+deploymentMode: SingleBinary
+singleBinary:
+  replicas: 1
+  persistence:
+    enabled: true
+    size: 50Gi
+    storageClass: gp3
+  podAnnotations:
+    linkerd.io/inject: enabled
+loki:
+  auth_enabled: false
+  schemaConfig:
+    configs:
+      - from: 2024-01-01
+        store: tsdb
+        object_store: s3
+        schema: v13
+        index:
+          prefix: index_
+          period: 24h
+  storage:
+    type: s3
+    s3:
+      region: ap-south-1
+      bucketnames: ${LOKI_S3_BUCKET}
+  limits_config:
+    retention_period: 30d
+    reject_old_samples: true
+    reject_old_samples_max_age: 168h
+
+gateway:
+  enabled: false
+
+monitoring:
+  serviceMonitor:
+    enabled: true

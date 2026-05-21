@@ -1,0 +1,85 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: storm-platform-alerts
+  namespace: observability
+  labels:
+    release: kube-prom
+spec:
+  groups:
+    - name: storm.service.health
+      rules:
+        - alert: HighErrorRate
+          expr: |
+            sum by (service) (rate(http_requests_total{status_code=~"5.."}[5m]))
+              /
+            sum by (service) (rate(http_requests_total[5m])) > 0.05
+          for: 5m
+          labels:
+            severity: page
+          annotations:
+            summary: "{{ $labels.service }} error rate > 5% over 5m"
+            runbook: "https://runbooks.storm.example/high-error-rate"
+
+        - alert: P99LatencyHigh
+          expr: |
+            histogram_quantile(0.99,
+              sum by (service, le) (rate(http_request_duration_seconds_bucket[10m]))
+            ) > 0.5
+          for: 10m
+          labels:
+            severity: page
+          annotations:
+            summary: "{{ $labels.service }} p99 latency > 500ms over 10m"
+            runbook: "https://runbooks.storm.example/p99-latency"
+
+    - name: storm.business
+      rules:
+        - alert: PaymentSuccessRateLow
+          expr: |
+            sum(rate(storm_payments_total{status="success"}[10m]))
+              /
+            clamp_min(sum(rate(storm_payments_total[10m])), 1) < 0.95
+          for: 10m
+          labels:
+            severity: page
+          annotations:
+            summary: "Payment success rate < 95% over 10m"
+            runbook: "https://runbooks.storm.example/payment-success-rate"
+
+        - alert: LowStockHigh
+          expr: storm_low_stock_skus > 50
+          for: 15m
+          labels:
+            severity: warn
+          annotations:
+            summary: "Low-stock SKUs > 50"
+
+    - name: storm.infra
+      rules:
+        - alert: KafkaConsumerLag
+          expr: kafka_consumergroup_lag > 10000
+          for: 5m
+          labels:
+            severity: page
+          annotations:
+            summary: "Kafka consumer lag > 10k for {{ $labels.consumergroup }}"
+            runbook: "https://runbooks.storm.example/kafka-lag"
+
+        - alert: PodRestartLoop
+          expr: increase(kube_pod_container_status_restarts_total[10m]) > 3
+          for: 10m
+          labels:
+            severity: warn
+          annotations:
+            summary: "{{ $labels.pod }} restarting frequently"
+
+        - alert: DiskUsageHigh
+          expr: |
+            (node_filesystem_size_bytes - node_filesystem_avail_bytes)
+              / node_filesystem_size_bytes > 0.80
+          for: 15m
+          labels:
+            severity: warn
+          annotations:
+            summary: "Disk usage > 80% on {{ $labels.instance }} ({{ $labels.mountpoint }})"

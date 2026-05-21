@@ -22,6 +22,7 @@
     "@storm/contracts": "workspace:*",
     "@storm/logger": "workspace:*",
     "@storm/middlewares": "workspace:*",
+    "@storm/observability": "workspace:*",
     "express": "4.21.0",
     "kafkajs": "2.2.4",
     "sharp": "0.33.5",

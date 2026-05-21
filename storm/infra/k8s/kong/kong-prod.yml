@@ -1,0 +1,143 @@
+_format_version: "3.0"
+_transform: true
+
+# Prod-flavoured Kong declarative config. Origins, hosts and upstream URLs
+# are templated via Kong's environment variable substitution (KONG_DECLARATIVE_*
+# in chart values); locally, `infra/local/kong/kong.yml` is the source of truth.
+
+services:
+  - name: identity
+    url: ${IDENTITY_UPSTREAM_URL}
+    routes:
+      - name: auth-login
+        paths: ["/api/auth/login"]
+        methods: ["POST", "OPTIONS"]
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 5
+              hour: 60
+              policy: redis
+              redis_host: ${KONG_REDIS_HOST}
+              fault_tolerant: true
+      - name: auth-signup
+        paths: ["/api/auth/signup"]
+        methods: ["POST", "OPTIONS"]
+        plugins:
+          - name: rate-limiting
+            config: { hour: 5, policy: redis, redis_host: ${KONG_REDIS_HOST}, fault_tolerant: true }
+      - name: auth-refresh
+        paths: ["/api/auth/refresh"]
+        methods: ["POST", "OPTIONS"]
+        plugins:
+          - name: rate-limiting
+            config: { hour: 60, policy: redis, redis_host: ${KONG_REDIS_HOST}, fault_tolerant: true }
+      - name: auth-otp
+        paths: ["/api/auth/otp"]
+        methods: ["POST", "OPTIONS"]
+        plugins:
+          - name: rate-limiting
+            config: { hour: 3, policy: redis, redis_host: ${KONG_REDIS_HOST}, fault_tolerant: true }
+      - name: auth-other
+        paths: ["/api/auth"]
+        methods: ["GET", "POST", "OPTIONS"]
+        strip_path: false
+
+  - name: cart
+    url: ${CART_UPSTREAM_URL}
+    routes:
+      - name: cart-add
+        paths: ["/api/cart/items"]
+        methods: ["POST", "OPTIONS"]
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 30
+              policy: redis
+              redis_host: ${KONG_REDIS_HOST}
+              fault_tolerant: true
+              limit_by: header
+              header_name: x-user-id
+      - name: cart-other
+        paths: ["/api/cart"]
+        strip_path: false
+
+  - name: order
+    url: ${ORDER_UPSTREAM_URL}
+    routes:
+      - name: place-order
+        paths: ["/api/checkout/orders"]
+        methods: ["POST", "OPTIONS"]
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 10
+              policy: redis
+              redis_host: ${KONG_REDIS_HOST}
+              fault_tolerant: true
+              limit_by: header
+              header_name: x-user-id
+      - name: order-other
+        paths: ["/api/orders", "/api/checkout"]
+        strip_path: false
+
+  - name: web-bff
+    url: ${WEB_BFF_UPSTREAM_URL}
+    routes:
+      - name: search
+        paths: ["/api/search", "/api/autocomplete"]
+        methods: ["GET", "OPTIONS"]
+        plugins:
+          - name: rate-limiting
+            config: { minute: 600, policy: redis, redis_host: ${KONG_REDIS_HOST}, fault_tolerant: true }
+      - name: web-bff-default
+        paths: ["/api"]
+        strip_path: false
+
+# ---------- Global plugins ----------
+plugins:
+  - name: cors
+    config:
+      origins:
+        - "https://web.storm.example"
+        - "https://admin.storm.example"
+      credentials: true
+      max_age: 600
+      headers:
+        - "Accept"
+        - "Authorization"
+        - "Content-Type"
+        - "X-Request-Id"
+        - "Idempotency-Key"
+      exposed_headers:
+        - "X-Request-Id"
+        - "X-RateLimit-Limit"
+        - "X-RateLimit-Remaining"
+        - "X-RateLimit-Reset"
+        - "Retry-After"
+      methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+
+  - name: correlation-id
+    config:
+      header_name: "X-Request-Id"
+      generator: "uuid"
+      echo_downstream: true
+
+  - name: response-transformer
+    config:
+      add:
+        headers:
+          - "Strict-Transport-Security: max-age=63072000; includeSubDomains; preload"
+          - "X-Content-Type-Options: nosniff"
+          - "X-Frame-Options: DENY"
+          - "Referrer-Policy: strict-origin-when-cross-origin"
+          - "Permissions-Policy: camera=(), microphone=(), geolocation=()"
+          - "Cross-Origin-Opener-Policy: same-origin"
+
+  # Edge rate-limit floor: 600/IP/min applies unless overridden by a route plugin.
+  - name: rate-limiting
+    config:
+      minute: 600
+      policy: redis
+      redis_host: ${KONG_REDIS_HOST}
+      fault_tolerant: true

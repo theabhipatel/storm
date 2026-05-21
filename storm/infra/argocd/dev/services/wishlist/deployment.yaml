@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wishlist
+  namespace: storm
+  labels:
+    app: wishlist
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: wishlist
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: wishlist
+      annotations:
+        linkerd.io/inject: enabled
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "3008"
+    spec:
+      serviceAccountName: wishlist
+      containers:
+        - name: app
+          # Image tag is bumped by the CD workflow on each merge to main.
+          image: 000000000000.dkr.ecr.ap-south-1.amazonaws.com/storm/wishlist:replace-me
+          ports:
+            - { name: http, containerPort: 3008 }
+          env:
+            - { name: NODE_ENV,                   value: production }
+            - { name: PORT,                       value: "3008" }
+            - { name: SERVICE_VERSION,            valueFrom: { fieldRef: { fieldPath: metadata.labels['app.kubernetes.io/version'] } } }
+            - { name: DEPLOYMENT_ENVIRONMENT,     value: dev }
+            - { name: OTEL_EXPORTER_OTLP_ENDPOINT,value: http://otel-collector.observability.svc.cluster.local:4318 }
+          envFrom:
+            - secretRef: { name: wishlist-secrets }
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits:   { cpu: 1,    memory: 1Gi }
+          readinessProbe:
+            httpGet: { path: /ready,  port: 3008 }
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /health, port: 3008 }
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wishlist
+  namespace: storm
+spec:
+  selector:
+    app: wishlist
+  ports:
+    - { name: http, port: 3008, targetPort: 3008 }
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: wishlist
+  namespace: storm
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: wishlist-secrets
+  namespace: storm
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: aws-secrets-manager
+    kind: ClusterSecretStore
+  target:
+    name: wishlist-secrets
+    creationPolicy: Owner
+  dataFrom:
+    - extract:
+        key: storm/dev/wishlist

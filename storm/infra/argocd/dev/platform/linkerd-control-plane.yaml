@@ -1,0 +1,35 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: linkerd-control-plane
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://helm.linkerd.io/stable
+    chart: linkerd-control-plane
+    targetRevision: 1.16.10
+    helm:
+      valueFiles: []
+      values: |
+        identity:
+          externalCA: false
+          issuer:
+            scheme: kubernetes.io/tls
+        proxy:
+          resources:
+            cpu: { request: 100m, limit: 1 }
+            memory: { request: 64Mi, limit: 250Mi }
+        controllerReplicas: 2
+        proxyInjector:
+          externalSecret: true
+        profileValidator:
+          externalSecret: true
+        policyValidator:
+          externalSecret: true
+  destination:
+    name: in-cluster
+    namespace: linkerd
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: ["CreateNamespace=true", "ServerSideApply=true"]

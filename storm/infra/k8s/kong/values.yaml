@@ -1,0 +1,47 @@
+# Helm values for kong/kong chart (DB-less, declarative config from ConfigMap).
+# https://github.com/Kong/charts/tree/main/charts/kong
+
+deployment:
+  kong:
+    enabled: true
+
+env:
+  database: "off"
+  declarative_config: /kong/declarative/kong.yml
+  proxy_access_log: "/dev/stdout"
+  admin_access_log: "/dev/stdout"
+  proxy_error_log: "/dev/stderr"
+  admin_error_log: "/dev/stderr"
+  log_level: notice
+
+dblessConfig:
+  configMap: kong-declarative
+
+ingressController:
+  enabled: false
+
+admin:
+  enabled: false
+  http:
+    enabled: false
+
+proxy:
+  enabled: true
+  type: LoadBalancer
+  http:
+    enabled: true
+  tls:
+    enabled: true
+
+resources:
+  requests: { cpu: 200m, memory: 256Mi }
+  limits: { cpu: 1, memory: 1Gi }
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+
+podAnnotations:
+  linkerd.io/inject: enabled

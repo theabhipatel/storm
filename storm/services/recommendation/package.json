@@ -17,6 +17,7 @@
     "@storm/contracts": "workspace:*",
     "@storm/logger": "workspace:*",
     "@storm/middlewares": "workspace:*",
+    "@storm/observability": "workspace:*",
     "express": "4.21.0",
     "ioredis": "5.4.1",
     "kafkajs": "2.2.4",

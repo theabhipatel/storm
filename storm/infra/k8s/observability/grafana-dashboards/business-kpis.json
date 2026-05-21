@@ -1,0 +1,54 @@
+{
+  "title": "Storm — Business KPIs",
+  "uid": "storm-business-kpis",
+  "schemaVersion": 39,
+  "version": 1,
+  "tags": ["storm", "business"],
+  "time": { "from": "now-24h", "to": "now" },
+  "refresh": "1m",
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Orders / hour",
+      "targets": [
+        { "expr": "60 * sum(rate(storm_orders_placed_total[1h]))" }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Payment success rate (24h)",
+      "targets": [
+        {
+          "expr": "100 * sum(rate(storm_payments_total{status=\"success\"}[24h])) / clamp_min(sum(rate(storm_payments_total[24h])), 0.0001)"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Orders by terminal status",
+      "targets": [
+        { "expr": "sum by (status) (rate(storm_orders_placed_total[5m]))", "legendFormat": "{{status}}" }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Low-stock SKUs",
+      "targets": [{ "expr": "storm_low_stock_skus" }]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Search latency p95 (s)",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (surface, le) (rate(storm_search_latency_seconds_bucket[5m])))",
+          "legendFormat": "p95 {{surface}}"
+        }
+      ]
+    }
+  ]
+}

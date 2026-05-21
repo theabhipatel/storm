@@ -5,7 +5,9 @@ import {
   authContext,
   errorHandler,
   notFoundHandler,
+  securityHeaders,
 } from "@storm/middlewares";
+import { metricsHandler } from "@storm/observability";
 import type { Logger } from "@storm/logger";
 
 import { SERVICE_NAME } from "./config.js";
@@ -45,6 +47,7 @@ export function createServer(opts: ServerDeps): Express {
   );
 
   app.use(express.json({ limit: "1mb" }));
+  app.use(securityHeaders({ apiCsp: true }));
   app.use(requestContext());
   app.use(requestLogger(logger));
   app.use(authContext());
@@ -52,6 +55,8 @@ export function createServer(opts: ServerDeps): Express {
   app.get("/health", (_req, res) => {
     res.status(200).json({ status: "ok", service: SERVICE_NAME });
   });
+
+  app.get("/metrics", metricsHandler(SERVICE_NAME));
 
   app.get("/ready", async (_req, res) => {
     const results: Record<string, "ok" | "fail"> = {};

@@ -21,6 +21,10 @@ const ConfigSchema = z.object({
     .union([z.literal("true"), z.literal("false")])
     .default("true")
     .transform((v) => v === "true"),
+  allowedOrigins: z
+    .string()
+    .default("http://localhost:3200,http://localhost:5173")
+    .transform((v) => v.split(",").map((s) => s.trim()).filter(Boolean)),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -44,6 +48,7 @@ export function loadConfig(): Config {
     kafkaClientId: process.env["KAFKA_CLIENT_ID"] ?? "web-bff",
     kafkaGroupId: process.env["KAFKA_GROUP_ID"],
     enableConsumer: process.env["WEB_BFF_ENABLE_CONSUMER"],
+    allowedOrigins: process.env["ALLOWED_ORIGINS"],
   });
 }
 

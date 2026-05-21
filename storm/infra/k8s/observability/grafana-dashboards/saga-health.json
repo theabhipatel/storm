@@ -1,0 +1,43 @@
+{
+  "title": "Storm — Order Saga Health",
+  "uid": "storm-saga-health",
+  "schemaVersion": 39,
+  "version": 1,
+  "tags": ["storm", "saga"],
+  "time": { "from": "now-6h", "to": "now" },
+  "refresh": "1m",
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Order placement step latency p95 (s)",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, span_name) (rate(otel_trace_duration_seconds_bucket{service_name=\"order\"}[5m])))",
+          "legendFormat": "{{span_name}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Saga compensation rate",
+      "targets": [
+        {
+          "expr": "sum(rate(storm_orders_placed_total{status=\"failed\"}[10m])) / clamp_min(sum(rate(storm_orders_placed_total[10m])), 0.0001)"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "DLQ growth (msgs/min)",
+      "targets": [
+        {
+          "expr": "60 * sum by (topic) (rate(kafka_topic_partition_current_offset{topic=~\".+\\\\.dlq\"}[1m]))",
+          "legendFormat": "{{topic}}"
+        }
+      ]
+    }
+  ]
+}

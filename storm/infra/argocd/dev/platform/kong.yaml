@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kong
+  namespace: argocd
+spec:
+  project: default
+  sources:
+    - repoURL: https://charts.konghq.com
+      chart: kong
+      targetRevision: 2.42.0
+      helm:
+        valueFiles:
+          - $values/storm/infra/k8s/kong/values.yaml
+    - repoURL: https://github.com/storm/storm.git
+      targetRevision: main
+      ref: values
+  destination:
+    name: in-cluster
+    namespace: kong
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: ["CreateNamespace=true", "ServerSideApply=true"]

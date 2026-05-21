@@ -1,3 +1,5 @@
+import "./tracing.js";
+
 import { createLogger } from "@storm/logger";
 
 import { loadConfig, SERVICE_NAME } from "./config.js";

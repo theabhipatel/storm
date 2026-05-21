@@ -1,0 +1,13 @@
+output "vpc_id" { value = module.network.vpc_id }
+output "cluster_name" { value = module.eks.cluster_name }
+output "cluster_endpoint" { value = module.eks.cluster_endpoint }
+output "alb_dns_name" { value = module.alb.dns_name }
+output "route53_name_servers" { value = module.route53.name_servers }
+output "rds_endpoints" { value = module.rds.cluster_endpoints }
+output "redis_endpoint" { value = module.redis.configuration_endpoint }
+output "msk_brokers" { value = module.msk.bootstrap_brokers_iam }
+output "opensearch_endpoint" { value = module.opensearch.endpoint }
+output "s3_buckets" { value = module.s3.bucket_names }
+output "cdn_domain" { value = module.cloudfront.distribution_domain }
+output "irsa_role_arns" { value = module.irsa.role_arns }
+output "secret_arns" { value = module.secrets.secret_arns }

@@ -1,5 +1,6 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 
+import { trace } from "@opentelemetry/api";
 import { pino, type Logger, type LoggerOptions } from "pino";
 
 export interface LogContext {
@@ -29,8 +30,15 @@ export function createLogger(opts: CreateLoggerOptions): Logger {
       level: (label) => ({ level: label.toUpperCase() }),
       log: (obj) => {
         const ctx = als.getStore();
-        if (!ctx) return obj;
-        return { ...ctx, ...obj };
+        const span = trace.getActiveSpan();
+        const otelCtx = span
+          ? {
+              traceId: span.spanContext().traceId,
+              spanId: span.spanContext().spanId,
+            }
+          : {};
+        if (!ctx && !span) return obj;
+        return { ...otelCtx, ...ctx, ...obj };
       },
     },
     redact: {

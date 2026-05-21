@@ -1,0 +1,49 @@
+# Application namespaces with Linkerd auto-injection enabled. Pods in these
+# namespaces get the linkerd2-proxy sidecar with mTLS enforced.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: storm
+  labels:
+    linkerd.io/inject: enabled
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: storm-data
+  labels:
+    linkerd.io/inject: enabled
+---
+# Block plaintext traffic to meshed pods.
+apiVersion: policy.linkerd.io/v1beta1
+kind: Server
+metadata:
+  name: storm-default
+  namespace: storm
+spec:
+  podSelector: {}
+  port: all-unmeshed
+  proxyProtocol: HTTP/2
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: AuthorizationPolicy
+metadata:
+  name: storm-allow-mesh
+  namespace: storm
+spec:
+  targetRef:
+    group: policy.linkerd.io
+    kind: Server
+    name: storm-default
+  requiredAuthenticationRefs:
+    - group: policy.linkerd.io
+      kind: MeshTLSAuthentication
+      name: mesh-only
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: MeshTLSAuthentication
+metadata:
+  name: mesh-only
+  namespace: storm
+spec:
+  identities: ["*.storm.serviceaccount.identity.linkerd.cluster.local"]

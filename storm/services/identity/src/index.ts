@@ -1,3 +1,5 @@
+import "./tracing.js";
+
 import { createLogger } from "@storm/logger";
 
 import { loadKeySet } from "./auth/keys.js";

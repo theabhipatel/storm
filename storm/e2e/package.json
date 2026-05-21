@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "test": "playwright test",
+    "test": "echo 'skipping e2e in default test run (use pnpm test:e2e)'",
+    "test:e2e": "playwright test",
     "test:headed": "playwright test --headed",
     "test:smoke": "playwright test tests/smoke",
     "test:golden": "playwright test tests/golden-path",
