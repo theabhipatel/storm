@@ -1,5 +1,31 @@
 name: storm-local
 
+# =================================================================
+# Shared env anchors (used by all 13 microservices below).
+# =================================================================
+
+x-pg: &pg-env
+  DB_URL_IDENTITY:  postgresql://identity:identity_pw@postgres:5432/identity?schema=public
+  DB_URL_CATALOG:   postgresql://catalog:catalog_pw@postgres:5432/catalog?schema=public
+  DB_URL_INVENTORY: postgresql://inventory:inventory_pw@postgres:5432/inventory?schema=public
+  DB_URL_ORDER:     postgresql://order:order_pw@postgres:5432/order?schema=public
+  DB_URL_PAYMENT:   postgresql://payment:payment_pw@postgres:5432/payment?schema=public
+  DB_URL_WISHLIST:  postgresql://wishlist:wishlist_pw@postgres:5432/wishlist?schema=public
+  DB_URL_MEDIA:     postgresql://media:media_pw@postgres:5432/media?schema=public
+
+x-common: &common-env
+  NODE_ENV: production
+  LOG_LEVEL: info
+  KAFKA_BROKERS: redpanda:9092
+  REDIS_URL: redis://redis:6379
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4318"
+
+x-svc-deps: &svc-deps
+  postgres:  { condition: service_healthy }
+  redis:     { condition: service_healthy }
+  redpanda:  { condition: service_healthy }
+  init:      { condition: service_completed_successfully }
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -194,6 +220,254 @@ services:
     ports: ["5540:5540"]
     depends_on: [redis]
 
+  # ==== App stack: init job + 13 microservices + 2 apps ====
+
+  init:
+    build:
+      context: .
+      dockerfile: infra/local/init/Dockerfile
+    container_name: storm-init
+    depends_on:
+      postgres: { condition: service_healthy }
+      mongodb:  { condition: service_healthy }
+    environment:
+      <<: *pg-env
+      DEFAULT_ADMIN_EMAIL: admin@storm.local
+      DEFAULT_ADMIN_PASSWORD: AdminPass1!
+    volumes:
+      - storm-keys:/keys
+    restart: "no"
+
+  identity:
+    build: { context: ., dockerfile: services/identity/Dockerfile }
+    container_name: storm-identity
+    depends_on: *svc-deps
+    environment:
+      <<: [*common-env, *pg-env]
+      PORT: "3001"
+      DATABASE_URL: ${DB_URL_IDENTITY:-postgresql://identity:identity_pw@postgres:5432/identity?schema=public}
+      JWT_PRIVATE_KEY_FILE: /keys/jwt.key
+      JWT_PUBLIC_KEY_FILE:  /keys/jwt.pub
+      JWT_KID_FILE:         /keys/jwt.kid
+      WEB_APP_ORIGIN:   "http://localhost:3200"
+      ADMIN_APP_ORIGIN: "http://localhost:3300"
+      ALLOWED_ORIGINS:  "http://localhost:3200,http://localhost:3300"
+    volumes:
+      - storm-keys:/keys:ro
+    command: ["sh", "-c", "export JWT_PRIVATE_KEY=\"$$(cat /keys/jwt.key)\"; export JWT_PUBLIC_KEY=\"$$(cat /keys/jwt.pub)\"; export JWT_KID=\"$$(cat /keys/jwt.kid)\"; exec node dist/index.js"]
+    ports: ["3001:3001"]
+
+  catalog:
+    build: { context: ., dockerfile: services/catalog/Dockerfile }
+    container_name: storm-catalog
+    depends_on: *svc-deps
+    environment:
+      <<: [*common-env, *pg-env]
+      PORT: "3002"
+      DATABASE_URL: ${DB_URL_CATALOG:-postgresql://catalog:catalog_pw@postgres:5432/catalog?schema=public}
+    ports: ["3002:3002"]
+
+  search:
+    build: { context: ., dockerfile: services/search/Dockerfile }
+    container_name: storm-search
+    depends_on:
+      <<: *svc-deps
+      opensearch: { condition: service_healthy }
+    environment:
+      <<: *common-env
+      PORT: "3003"
+      OPENSEARCH_URL: http://opensearch:9200
+    ports: ["3003:3003"]
+
+  inventory:
+    build: { context: ., dockerfile: services/inventory/Dockerfile }
+    container_name: storm-inventory
+    depends_on: *svc-deps
+    environment:
+      <<: [*common-env, *pg-env]
+      PORT: "3004"
+      DATABASE_URL: ${DB_URL_INVENTORY:-postgresql://inventory:inventory_pw@postgres:5432/inventory?schema=public}
+    ports: ["3004:3004"]
+
+  cart:
+    build: { context: ., dockerfile: services/cart/Dockerfile }
+    container_name: storm-cart
+    depends_on: *svc-deps
+    environment:
+      <<: *common-env
+      PORT: "3005"
+    ports: ["3005:3005"]
+
+  order:
+    build: { context: ., dockerfile: services/order/Dockerfile }
+    container_name: storm-order
+    depends_on:
+      <<: *svc-deps
+      cart:      { condition: service_started }
+      identity:  { condition: service_started }
+      inventory: { condition: service_started }
+      payment:   { condition: service_started }
+    environment:
+      <<: [*common-env, *pg-env]
+      PORT: "3006"
+      DATABASE_URL: ${DB_URL_ORDER:-postgresql://order:order_pw@postgres:5432/order?schema=public}
+      CART_BASE_URL:        http://cart:3005
+      IDENTITY_BASE_URL:    http://identity:3001
+      INVENTORY_BASE_URL:   http://inventory:3004
+      PAYMENT_BASE_URL:     http://payment:3007
+      NOTIFICATION_BASE_URL: http://notification:3010
+      INVENTORY_GRPC_ADDRESS: inventory:50051
+    ports: ["3006:3006"]
+
+  payment:
+    build: { context: ., dockerfile: services/payment/Dockerfile }
+    container_name: storm-payment
+    depends_on: *svc-deps
+    environment:
+      <<: [*common-env, *pg-env]
+      PORT: "3007"
+      DATABASE_URL: ${DB_URL_PAYMENT:-postgresql://payment:payment_pw@postgres:5432/payment?schema=public}
+      # Set real test keys in .env (RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, RAZORPAY_WEBHOOK_SECRET) for checkout to work.
+      RAZORPAY_KEY_ID:        ${RAZORPAY_KEY_ID:-rzp_test_placeholder}
+      RAZORPAY_KEY_SECRET:    ${RAZORPAY_KEY_SECRET:-placeholder}
+      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-placeholder}
+    ports: ["3007:3007"]
+
+  wishlist:
+    build: { context: ., dockerfile: services/wishlist/Dockerfile }
+    container_name: storm-wishlist
+    depends_on: *svc-deps
+    environment:
+      <<: [*common-env, *pg-env]
+      PORT: "3008"
+      DATABASE_URL: ${DB_URL_WISHLIST:-postgresql://wishlist:wishlist_pw@postgres:5432/wishlist?schema=public}
+    ports: ["3008:3008"]
+
+  recommendation:
+    build: { context: ., dockerfile: services/recommendation/Dockerfile }
+    container_name: storm-recommendation
+    depends_on: *svc-deps
+    environment:
+      <<: *common-env
+      PORT: "3009"
+    ports: ["3009:3009"]
+
+  notification:
+    build: { context: ., dockerfile: services/notification/Dockerfile }
+    container_name: storm-notification
+    depends_on:
+      <<: *svc-deps
+      mongodb: { condition: service_healthy }
+      mailhog: { condition: service_started }
+    environment:
+      <<: *common-env
+      PORT: "3010"
+      MONGO_URL:    mongodb://root:root@mongodb:27017/?authSource=admin
+      MONGO_DB:     storm_notification
+      SMTP_HOST:    mailhog
+      SMTP_PORT:    "1025"
+      SMTP_USER:    ""
+      SMTP_PASSWORD: ""
+      SMTP_FROM:    "Storm <noreply@storm.local>"
+    ports: ["3010:3010"]
+
+  media:
+    build: { context: ., dockerfile: services/media/Dockerfile }
+    container_name: storm-media
+    depends_on:
+      <<: *svc-deps
+      minio-init: { condition: service_completed_successfully }
+    environment:
+      <<: [*common-env, *pg-env]
+      PORT: "3011"
+      DATABASE_URL: ${DB_URL_MEDIA:-postgresql://media:media_pw@postgres:5432/media?schema=public}
+      S3_ENDPOINT:   http://minio:9000
+      S3_REGION:     us-east-1
+      S3_BUCKET:     storm-media
+      S3_ACCESS_KEY: minio
+      S3_SECRET_KEY: minio12345
+      S3_FORCE_PATH_STYLE: "true"
+      CDN_BASE_URL:  http://localhost:9000/storm-media
+    ports: ["3011:3011"]
+
+  web-bff:
+    build: { context: ., dockerfile: services/web-bff/Dockerfile }
+    container_name: storm-web-bff
+    depends_on:
+      <<: *svc-deps
+      catalog:        { condition: service_started }
+      search:         { condition: service_started }
+      cart:           { condition: service_started }
+      wishlist:       { condition: service_started }
+      order:          { condition: service_started }
+      media:          { condition: service_started }
+      inventory:      { condition: service_started }
+      notification:   { condition: service_started }
+      recommendation: { condition: service_started }
+    environment:
+      <<: *common-env
+      PORT: "3000"
+      CATALOG_BASE_URL:        http://catalog:3002
+      MEDIA_BASE_URL:          http://media:3011
+      SEARCH_BASE_URL:         http://search:3003
+      CART_BASE_URL:           http://cart:3005
+      WISHLIST_BASE_URL:       http://wishlist:3008
+      RECOMMENDATION_BASE_URL: http://recommendation:3009
+      INVENTORY_BASE_URL:      http://inventory:3004
+      ORDER_BASE_URL:          http://order:3006
+      NOTIFICATION_BASE_URL:   http://notification:3010
+      KAFKA_CLIENT_ID:         web-bff
+      ALLOWED_ORIGINS:         "http://localhost:3200"
+    ports: ["3000:3000"]
+
+  admin-bff:
+    build: { context: ., dockerfile: services/admin-bff/Dockerfile }
+    container_name: storm-admin-bff
+    depends_on:
+      <<: *svc-deps
+      order:        { condition: service_started }
+      payment:      { condition: service_started }
+      inventory:    { condition: service_started }
+      identity:     { condition: service_started }
+      notification: { condition: service_started }
+    environment:
+      <<: *common-env
+      PORT: "3100"
+      ORDER_BASE_URL:        http://order:3006
+      PAYMENT_BASE_URL:      http://payment:3007
+      INVENTORY_BASE_URL:    http://inventory:3004
+      IDENTITY_BASE_URL:     http://identity:3001
+      NOTIFICATION_BASE_URL: http://notification:3010
+      ALLOWED_ORIGINS:       "http://localhost:3300"
+    ports: ["3100:3100"]
+
+  web:
+    build: { context: ., dockerfile: apps/web/Dockerfile }
+    container_name: storm-web
+    depends_on:
+      web-bff: { condition: service_started }
+    environment:
+      NODE_ENV: production
+      PORT: "3200"
+      WEB_BFF_BASE_URL: http://web-bff:3000
+      NEXT_PUBLIC_WEB_BFF_BASE_URL: http://localhost:3000
+      NEXT_PUBLIC_KONG_BASE_URL:    http://localhost:8000
+    ports: ["3200:3200"]
+
+  admin:
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+      args:
+        VITE_ADMIN_BFF_BASE_URL: http://localhost:3100
+        VITE_IDENTITY_BASE_URL:  http://localhost:3001
+        VITE_KONG_BASE_URL:      http://localhost:8000
+    container_name: storm-admin
+    depends_on:
+      admin-bff: { condition: service_started }
+      identity:  { condition: service_started }
+    ports: ["3300:80"]
+
 volumes:
   storm-pgdata:
   storm-redisdata:
@@ -201,3 +475,4 @@ volumes:
   storm-osdata:
   storm-mongodata:
   storm-miniodata:
+  storm-keys:
