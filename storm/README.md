@@ -29,7 +29,7 @@ Then open:
 | http://localhost:9001 | MinIO console (minio / minio12345) |
 | http://localhost:8000 | Kong proxy (API gateway) |
 
-Default admin login:  `admin@storm.local`  /  `AdminPass1!`
+Default admin login:  `admin@storm.local`  /  `AdminPass1!Storm`
 
 Razorpay test keys (only needed for actual checkout payment) — drop into a `.env` next to `docker-compose.yml`:
 

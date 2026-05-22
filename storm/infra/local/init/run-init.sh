@@ -37,6 +37,10 @@ fi
 # 4) Bootstrap admin user (idempotent)
 export DATABASE_URL="$DB_URL_IDENTITY"
 echo "==> Bootstrapping admin user"
-pnpm --filter @storm/identity bootstrap-admin || echo "(admin bootstrap skipped — likely already exists)"
+pnpm --filter @storm/identity exec tsx scripts/bootstrap-admin.ts \
+  --email="${DEFAULT_ADMIN_EMAIL:-admin@storm.local}" \
+  --password="${DEFAULT_ADMIN_PASSWORD:-AdminPass1!Storm}" \
+  --name="${DEFAULT_ADMIN_NAME:-Admin}" \
+  || echo "(admin bootstrap skipped — likely already exists)"
 
 echo "==> Init complete."

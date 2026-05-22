@@ -5,10 +5,12 @@ import { BrowserRouter } from "react-router-dom";
 
 import { App } from "./App";
 import { AuthBootstrap } from "./components/AuthBootstrap";
+import { setStoreRef } from "./lib/storeRef";
 import { initSentry } from "./sentry";
 import { store } from "./store";
 import "./index.css";
 
+setStoreRef(store);
 initSentry();
 
 const rootEl = document.getElementById("root");

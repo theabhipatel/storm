@@ -5,7 +5,7 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios";
 import type { BaseQueryFn } from "@reduxjs/toolkit/query";
 
-import { store } from "../store";
+import { getStoreRef } from "./storeRef";
 import { toApiError, type ApiError } from "./apiError";
 
 export const CATALOG_BASE_URL =
@@ -28,7 +28,7 @@ function makeClient(baseURL: string): AxiosInstance {
     headers: { "Content-Type": "application/json" },
   });
   client.interceptors.request.use((config) => {
-    const user = store.getState().auth.currentUser;
+    const user = getStoreRef().getState().auth.currentUser;
     if (user) {
       config.headers["X-User-Id"] = user.id;
       config.headers["X-User-Role"] = user.role;

@@ -231,9 +231,10 @@ services:
       postgres: { condition: service_healthy }
       mongodb:  { condition: service_healthy }
     environment:
-      <<: *pg-env
+      <<: [*pg-env, *common-env]
       DEFAULT_ADMIN_EMAIL: admin@storm.local
-      DEFAULT_ADMIN_PASSWORD: AdminPass1!
+      DEFAULT_ADMIN_PASSWORD: AdminPass1!Storm
+      DEFAULT_ADMIN_NAME: Admin
     volumes:
       - storm-keys:/keys
     restart: "no"
