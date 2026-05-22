@@ -12,10 +12,12 @@ COPY packages ./packages
 COPY services/identity ./services/identity
 
 RUN pnpm install --frozen-lockfile=false
+RUN pnpm --filter @storm/identity exec prisma generate
 RUN pnpm --filter @storm/identity... build
 
 # ---- runner ----
 FROM node:20-alpine AS runner
+RUN apk add --no-cache openssl
 RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
 WORKDIR /app
 ENV NODE_ENV=production

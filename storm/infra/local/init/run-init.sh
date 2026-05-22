@@ -12,6 +12,9 @@ if [ ! -f "$KEYS_DIR/jwt.key" ]; then
   echo "local-dev-1" > "$KEYS_DIR/jwt.kid"
 fi
 
+# Make keys world-readable so non-root service containers can read them.
+chmod 0644 "$KEYS_DIR/jwt.key" "$KEYS_DIR/jwt.pub" "$KEYS_DIR/jwt.kid"
+
 export JWT_PRIVATE_KEY="$(cat "$KEYS_DIR/jwt.key")"
 export JWT_PUBLIC_KEY="$(cat "$KEYS_DIR/jwt.pub")"
 export JWT_KID="$(cat "$KEYS_DIR/jwt.kid")"

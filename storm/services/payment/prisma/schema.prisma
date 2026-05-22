@@ -1,8 +1,9 @@
 // payment service Prisma schema.
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../src/generated/client"
+  provider      = "prisma-client-js"
+  output        = "../src/generated/client"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {

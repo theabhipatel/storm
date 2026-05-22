@@ -10,9 +10,12 @@ COPY packages ./packages
 COPY services/payment ./services/payment
 
 RUN pnpm install --frozen-lockfile=false
+RUN pnpm --filter @storm/payment exec prisma generate
 RUN pnpm --filter @storm/payment... build
+RUN cp -r services/payment/src/generated services/payment/dist/generated
 
 FROM node:20-alpine AS runner
+RUN apk add --no-cache openssl
 RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
 WORKDIR /app
 ENV NODE_ENV=production

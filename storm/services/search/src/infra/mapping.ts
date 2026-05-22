@@ -64,7 +64,7 @@ export const PRODUCTS_INDEX_MAPPING = {
       normalizer: "lowercase",
       fields: { text: { type: "text", analyzer: "standard" } },
     },
-    attributes: { type: "flattened" },
+    attributes: { type: "flat_object" },
     basePrice: { type: "integer" },
     currency: { type: "keyword" },
     inStock: { type: "boolean" },

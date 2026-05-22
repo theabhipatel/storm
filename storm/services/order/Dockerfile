@@ -10,9 +10,12 @@ COPY packages ./packages
 COPY services/order ./services/order
 
 RUN pnpm install --frozen-lockfile=false
+RUN pnpm --filter @storm/order exec prisma generate
 RUN pnpm --filter @storm/order... build
+RUN cp -r services/order/src/generated services/order/dist/generated
 
 FROM node:20-alpine AS runner
+RUN apk add --no-cache openssl
 RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
 WORKDIR /app
 ENV NODE_ENV=production

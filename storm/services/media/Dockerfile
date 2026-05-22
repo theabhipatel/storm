@@ -10,9 +10,12 @@ COPY packages ./packages
 COPY services/media ./services/media
 
 RUN pnpm install --frozen-lockfile=false
+RUN pnpm --filter @storm/media exec prisma generate
 RUN pnpm --filter @storm/media... build
+RUN cp -r services/media/src/generated services/media/dist/generated
 
 FROM node:20-alpine AS runner
+RUN apk add --no-cache openssl
 RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
 WORKDIR /app
 ENV NODE_ENV=production
