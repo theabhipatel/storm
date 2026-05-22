@@ -278,6 +278,7 @@ services:
       <<: *common-env
       PORT: "3003"
       OPENSEARCH_URL: http://opensearch:9200
+      CATALOG_BASE_URL: http://catalog:3002
     ports: ["3003:3003"]
 
   inventory:
@@ -468,6 +469,37 @@ services:
       admin-bff: { condition: service_started }
       identity:  { condition: service_started }
     ports: ["3300:80"]
+
+  # One-shot dev seed: products, categories, brands, users, abhi's wishlist/cart/orders.
+  # Skips silently if abhi@gmail.com already exists.
+  seed-data:
+    build:
+      context: ./scripts/seed
+      dockerfile: Dockerfile
+    container_name: storm-seed
+    depends_on:
+      postgres:    { condition: service_healthy }
+      redis:       { condition: service_healthy }
+      minio:       { condition: service_healthy }
+      minio-init:  { condition: service_completed_successfully }
+      catalog:     { condition: service_started }
+      inventory:   { condition: service_started }
+      identity:    { condition: service_started }
+      media:       { condition: service_started }
+    environment:
+      PG_HOST:        postgres
+      PG_PORT:        "5432"
+      REDIS_URL:      redis://redis:6379
+      CATALOG_BASE:   http://catalog:3002
+      INVENTORY_BASE: http://inventory:3004
+      IDENTITY_BASE:  http://identity:3001
+      MEDIA_BASE:     http://media:3011
+      S3_ENDPOINT:    http://minio:9000
+      S3_REGION:      us-east-1
+      S3_BUCKET:      storm-media
+      S3_ACCESS_KEY:  minio
+      S3_SECRET_KEY:  minio12345
+    restart: "no"
 
 volumes:
   storm-pgdata:
