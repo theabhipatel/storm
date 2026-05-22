@@ -6,6 +6,7 @@ import {
   MobileChangeRequestSchema,
   ProfileUpdateSchema,
 } from "@storm/contracts";
+import { CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -25,17 +26,26 @@ export default function ProfilePage() {
   return (
     <AccountShell title="Profile">
       {isLoading || !data ? (
-        <p className="text-sm text-neutral-500">Loading…</p>
+        <p className="text-sm text-text-muted">Loading…</p>
       ) : (
         <div className="space-y-8">
           <NameForm initialName={data.user.name} />
-          <hr />
+          <hr className="border-border" />
           <EmailForm currentEmail={data.user.email} />
-          <hr />
+          <hr className="border-border" />
           <MobileForm currentMobile={data.user.mobile} />
         </div>
       )}
     </AccountShell>
+  );
+}
+
+function SuccessNote({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="inline-flex items-center gap-2 text-sm font-medium text-success">
+      <CheckCircle2 className="h-4 w-4" />
+      {children}
+    </p>
   );
 }
 
@@ -60,16 +70,14 @@ function NameForm({ initialName }: { initialName: string }) {
       })}
       className="space-y-3"
     >
-      <h2 className="text-sm font-semibold text-neutral-900">Name</h2>
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-text">Name</h2>
       <Field label="Display name" {...register("name")} error={errors.name?.message} />
       {state.error ? (
         <FormError>
           {(state.error as { message?: string }).message ?? "Could not update name."}
         </FormError>
       ) : null}
-      {state.isSuccess ? (
-        <p className="text-sm text-emerald-700">Name updated.</p>
-      ) : null}
+      {state.isSuccess ? <SuccessNote>Name updated.</SuccessNote> : null}
       <Button type="submit" disabled={state.isLoading}>
         {state.isLoading ? "Saving…" : "Save"}
       </Button>
@@ -97,8 +105,8 @@ function EmailForm({ currentEmail }: { currentEmail: string }) {
       })}
       className="space-y-3"
     >
-      <h2 className="text-sm font-semibold text-neutral-900">Email</h2>
-      <p className="text-xs text-neutral-500">Current: {currentEmail}</p>
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-text">Email</h2>
+      <p className="text-xs text-text-subtle">Current: {currentEmail}</p>
       <Field
         label="New email"
         type="email"
@@ -122,10 +130,10 @@ function EmailForm({ currentEmail }: { currentEmail: string }) {
         </FormError>
       ) : null}
       {state.isSuccess ? (
-        <p className="text-sm text-emerald-700">
+        <SuccessNote>
           Verification email sent. Your old email continues to work until you click the
           confirmation link.
-        </p>
+        </SuccessNote>
       ) : null}
       <Button type="submit" disabled={state.isLoading}>
         {state.isLoading ? "Sending…" : "Request change"}
@@ -146,8 +154,8 @@ function MobileForm({ currentMobile }: { currentMobile: string | null }) {
 
   return (
     <div className="space-y-3">
-      <h2 className="text-sm font-semibold text-neutral-900">Mobile</h2>
-      <p className="text-xs text-neutral-500">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-text">Mobile</h2>
+      <p className="text-xs text-text-subtle">
         Current: {currentMobile ? `+91 ${currentMobile}` : "Not set"}
       </p>
       <form
@@ -195,7 +203,7 @@ function MobileForm({ currentMobile }: { currentMobile: string | null }) {
               /* surfaced */
             }
           })}
-          className="space-y-3 border-t border-neutral-100 pt-3"
+          className="space-y-3 rounded-md border border-border bg-surface-muted p-4"
         >
           <OtpInput
             {...otpForm.register("otp", { pattern: /^\d{6}$/ })}
@@ -210,9 +218,7 @@ function MobileForm({ currentMobile }: { currentMobile: string | null }) {
                   : (confState.error as { message?: string }).message ?? "Verification failed."}
             </FormError>
           ) : null}
-          {confState.isSuccess ? (
-            <p className="text-sm text-emerald-700">Mobile updated.</p>
-          ) : null}
+          {confState.isSuccess ? <SuccessNote>Mobile updated.</SuccessNote> : null}
           <Button type="submit" disabled={confState.isLoading}>
             {confState.isLoading ? "Verifying…" : "Verify"}
           </Button>

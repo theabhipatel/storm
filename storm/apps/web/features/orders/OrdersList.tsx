@@ -1,10 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { ChevronRight, ShoppingBag } from "lucide-react";
 import Link from "next/link";
+import { useMemo, useState } from "react";
 import type { OrderStatus, OrderSummary } from "@storm/contracts";
 
 import { EmptyState } from "../../components/domain/EmptyState";
+import { Button } from "../../components/ui/Button";
+import { Card } from "../../components/ui/Card";
 import { OrderListSkeleton } from "../../components/ui/Skeletons";
 import { formatDateShortIST, formatINR } from "../../lib/format";
 import { useListOrdersQuery } from "./orders.api";
@@ -69,6 +72,7 @@ export function OrdersList() {
         description="When you place an order, it'll show up here."
         ctaLabel="Start shopping"
         ctaHref="/"
+        icon={<ShoppingBag className="h-8 w-8" />}
       />
     );
   }
@@ -80,12 +84,11 @@ export function OrdersList() {
             key={f.key}
             type="button"
             onClick={() => setFilter(f.key)}
-            className={
-              "rounded-full border px-3 py-1 text-xs font-medium " +
-              (filter === f.key
-                ? "border-neutral-900 bg-neutral-900 text-white"
-                : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400")
-            }
+            className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold transition ${
+              filter === f.key
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-surface text-text hover:border-primary/40"
+            }`}
           >
             {f.label}
           </button>
@@ -93,70 +96,70 @@ export function OrdersList() {
       </div>
 
       {filtered.length === 0 ? (
-        <p className="rounded-md border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-500">
+        <p className="rounded-lg border border-dashed border-border bg-surface-muted p-6 text-center text-sm text-text-muted">
           No orders match this filter.
         </p>
       ) : (
         <ul className="space-y-3">
           {filtered.map((order) => (
-            <li
-              key={order.id}
-              className="flex items-start justify-between rounded-md border border-neutral-200 bg-white p-4"
-            >
-              <div className="flex items-start gap-3">
-                {order.thumbnailUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={order.thumbnailUrl}
-                    alt=""
-                    className="h-14 w-14 rounded object-cover"
-                  />
-                ) : null}
-                <div>
-                  <div className="flex items-center gap-2">
+            <li key={order.id}>
+              <Card padding="md" hoverable>
+                <div className="flex items-start gap-4">
+                  <Link
+                    href={`/orders/${order.id}`}
+                    className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border border-border bg-surface-muted"
+                  >
+                    {order.thumbnailUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={order.thumbnailUrl}
+                        alt=""
+                        className="h-full w-full object-contain p-1"
+                      />
+                    ) : null}
+                  </Link>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Link
+                        href={`/orders/${order.id}`}
+                        className="text-sm font-semibold text-text hover:text-primary"
+                      >
+                        Order #{order.id.slice(0, 8)}
+                      </Link>
+                      <OrderStatusBadge status={order.status as OrderStatus} />
+                    </div>
+                    <p className="mt-1 truncate text-sm text-text-muted">
+                      {order.firstItemName ?? "Order"} · {order.itemsCount} item
+                      {order.itemsCount === 1 ? "" : "s"}
+                    </p>
+                    <p className="text-xs text-text-subtle">
+                      Placed on {formatDateShortIST(order.createdAt)}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <p className="text-base font-bold text-text">
+                      {formatINR(order.totalPaise, order.currency)}
+                    </p>
                     <Link
                       href={`/orders/${order.id}`}
-                      className="font-medium text-neutral-900 hover:underline"
+                      className="inline-flex items-center gap-0.5 text-sm font-semibold text-primary hover:text-primary-hover"
                     >
-                      #{order.id.slice(0, 8)}
+                      View
+                      <ChevronRight className="h-3.5 w-3.5" />
                     </Link>
-                    <OrderStatusBadge status={order.status as OrderStatus} />
                   </div>
-                  <p className="mt-1 text-sm text-neutral-700">
-                    {order.firstItemName ?? "Order"} · {order.itemsCount} item
-                    {order.itemsCount === 1 ? "" : "s"}
-                  </p>
-                  <p className="text-xs text-neutral-500">
-                    Placed on {formatDateShortIST(order.createdAt)}
-                  </p>
                 </div>
-              </div>
-              <div className="text-right">
-                <p className="font-semibold text-neutral-900">
-                  {formatINR(order.totalPaise, order.currency)}
-                </p>
-                <Link
-                  href={`/orders/${order.id}`}
-                  className="mt-2 inline-block text-sm text-neutral-700 underline-offset-2 hover:underline"
-                >
-                  View details
-                </Link>
-              </div>
+              </Card>
             </li>
           ))}
         </ul>
       )}
 
       {data?.nextCursor ? (
-        <div className="text-center">
-          <button
-            type="button"
-            onClick={loadMore}
-            disabled={isFetching}
-            className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-800 disabled:opacity-50"
-          >
+        <div className="flex justify-center">
+          <Button variant="outline" onClick={loadMore} disabled={isFetching}>
             {isFetching ? "Loading…" : "Load more"}
-          </button>
+          </Button>
         </div>
       ) : null}
     </div>

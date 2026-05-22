@@ -24,7 +24,7 @@ export default function OrdersPage() {
   return (
     <AccountShell title="Orders">
       {!user ? (
-        <p className="text-sm text-neutral-500">Loading…</p>
+        <p className="text-sm text-text-muted">Loading…</p>
       ) : (
         <OrdersList />
       )}

@@ -1,6 +1,8 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Lock, Mail } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -36,12 +38,24 @@ export default function LoginPage() {
   const apiBase = process.env["NEXT_PUBLIC_API_BASE_URL"] ?? "http://localhost:8000";
 
   return (
-    <AuthShell title="Log in to Storm">
+    <AuthShell
+      title="Log in to Storm"
+      subtitle="Welcome back — pick up where you left off."
+      footer={
+        <>
+          New to Storm?{" "}
+          <Link href="/auth/signup" className="font-semibold text-primary hover:text-primary-hover">
+            Create an account
+          </Link>
+        </>
+      }
+    >
       <form onSubmit={onSubmit} className="space-y-4">
         <Field
           label="Email"
           type="email"
           autoComplete="email"
+          leadingIcon={<Mail className="h-4 w-4" />}
           {...register("email")}
           error={errors.email?.message}
         />
@@ -49,6 +63,7 @@ export default function LoginPage() {
           label="Password"
           type="password"
           autoComplete="current-password"
+          leadingIcon={<Lock className="h-4 w-4" />}
           {...register("password")}
           error={errors.password?.message}
         />
@@ -59,29 +74,53 @@ export default function LoginPage() {
               : (error as { message?: string }).message ?? "Login failed."}
           </FormError>
         ) : null}
-        <Button type="submit" disabled={isLoading}>
+        <div className="flex justify-end">
+          <Link
+            href="/auth/forgot-password"
+            className="text-xs font-semibold text-primary hover:text-primary-hover"
+          >
+            Forgot password?
+          </Link>
+        </div>
+        <Button type="submit" disabled={isLoading} size="lg" fullWidth>
           {isLoading ? "Signing in..." : "Log in"}
         </Button>
-        <div className="flex items-center justify-between text-sm">
-          <a href="/auth/forgot-password" className="text-neutral-700 underline">
-            Forgot password?
-          </a>
-          <a href="/auth/signup" className="text-neutral-700 underline">
-            Create account
-          </a>
-        </div>
       </form>
-      <div className="my-6 flex items-center gap-3 text-xs text-neutral-500">
-        <span className="h-px flex-1 bg-neutral-200" />
+      <div className="my-5 flex items-center gap-3 text-xs font-semibold uppercase tracking-wide text-text-subtle">
+        <span className="h-px flex-1 bg-border" />
         OR
-        <span className="h-px flex-1 bg-neutral-200" />
+        <span className="h-px flex-1 bg-border" />
       </div>
       <a
         href={`${apiBase}/api/auth/google`}
-        className="block w-full rounded-md border border-neutral-300 bg-white px-4 py-2 text-center text-sm font-medium text-neutral-800 hover:bg-neutral-50"
+        className="flex w-full items-center justify-center gap-2.5 rounded-md border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-text shadow-sm hover:bg-surface-muted"
       >
+        <GoogleIcon />
         Continue with Google
       </a>
     </AuthShell>
+  );
+}
+
+function GoogleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+      <path
+        fill="#4285F4"
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.05 5.05 0 0 1-2.2 3.32v2.76h3.56c2.08-1.92 3.28-4.75 3.28-8.09z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.56-2.76c-.99.66-2.25 1.06-3.72 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.84 14.11A6.6 6.6 0 0 1 5.48 12c0-.73.13-1.44.36-2.11V7.05H2.18A11 11 0 0 0 1 12c0 1.77.42 3.45 1.18 4.95l3.66-2.84z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.05l3.66 2.84C6.71 7.3 9.14 5.38 12 5.38z"
+      />
+    </svg>
   );
 }

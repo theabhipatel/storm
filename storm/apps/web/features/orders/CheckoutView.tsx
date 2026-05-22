@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { AlertCircle, Lock, ShieldCheck } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import type {
   Address,
   CheckoutInitResponse,
@@ -10,6 +11,9 @@ import type {
 } from "@storm/contracts";
 
 import { AddressForm } from "../../components/domain/AddressForm";
+import { Button } from "../../components/ui/Button";
+import { Card } from "../../components/ui/Card";
+import { StepIndicator } from "../../components/ui/StepIndicator";
 import { formatINR } from "../../lib/format";
 import { useCurrentUser } from "../auth/auth.hooks";
 import {
@@ -84,25 +88,29 @@ export function CheckoutView() {
   );
 
   if (!user) return null;
-  if (error) return <ErrorPanel message={error} />;
+  if (error && !checkout) return <ErrorPanel message={error} />;
   if (!checkout) {
-    return <p className="py-12 text-center text-neutral-500">Preparing your order…</p>;
+    return (
+      <p className="py-12 text-center text-sm text-text-muted">Preparing your order…</p>
+    );
   }
   if (!checkout.items.length) {
     return (
-      <div className="rounded-md border border-dashed border-neutral-300 p-10 text-center">
-        <p className="text-neutral-700">Your cart is empty.</p>
+      <Card padding="lg" className="text-center">
+        <h2 className="text-base font-semibold text-text">Your cart is empty</h2>
         <Link
           href="/"
-          className="mt-3 inline-block rounded-md bg-neutral-900 px-4 py-2 text-sm font-semibold text-white"
+          className="mt-4 inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-hover"
         >
           Continue shopping
         </Link>
-      </div>
+      </Card>
     );
   }
   const hasOos = checkout.items.some((i) => !i.available);
-  const canPlace = Boolean(selectedAddress) && !hasOos && !paying && !createState.isLoading;
+  const canPlace =
+    Boolean(selectedAddress) && !hasOos && !paying && !createState.isLoading;
+  const currentStep = !selectedAddress ? 0 : hasOos ? 1 : 2;
 
   async function handlePlaceOrder(): Promise<void> {
     if (!selectedAddress) return;
@@ -146,64 +154,80 @@ export function CheckoutView() {
           setPaying(false);
         },
       });
-    } catch (err) {
+    } catch {
       setError("Couldn't open the payment window. Please try again.");
       setPaying(false);
     }
   }
 
   return (
-    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px]">
-      <section className="space-y-6">
-        <Step number={1} title="Delivery address">
-          <AddressPicker
-            addresses={addressesQuery.data?.items ?? []}
-            selectedId={selectedAddressId}
-            onSelect={setSelectedAddressId}
-            isLoading={addressesQuery.isLoading}
-          />
-        </Step>
-        <Step number={2} title="Order review">
-          <ul className="space-y-3">
-            {checkout.items.map((item) => (
-              <li
-                key={item.sku}
-                className="flex items-start justify-between rounded-md border border-neutral-200 bg-white p-4"
-              >
-                <div>
-                  <p className="font-medium text-neutral-900">{item.name}</p>
-                  <p className="text-sm text-neutral-600">SKU: {item.sku}</p>
-                  <p className="text-sm text-neutral-700">
-                    Qty {item.qty} × {formatINR(item.unitPricePaise)}
-                  </p>
-                  {!item.available && (
-                    <p className="mt-1 text-xs text-red-600">Out of stock</p>
-                  )}
-                </div>
-                <p className="font-semibold text-neutral-900">
-                  {formatINR(item.lineTotalPaise)}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </Step>
-        {hasOos && (
-          <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-            Some items are out of stock. Please{" "}
-            <Link href="/cart" className="underline">
-              update your cart
-            </Link>{" "}
-            to proceed.
-          </p>
-        )}
-      </section>
-      <Summary
-        checkout={checkout}
-        canPlace={canPlace}
-        loading={createState.isLoading || initState.isLoading || paying}
-        onPlace={handlePlaceOrder}
-        error={error}
+    <div className="space-y-6">
+      <StepIndicator
+        steps={[
+          { label: "Delivery address" },
+          { label: "Order review" },
+          { label: "Payment" },
+        ]}
+        current={currentStep}
       />
+
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_360px]">
+        <div className="space-y-4">
+          <Step number={1} title="Delivery address">
+            <AddressPicker
+              addresses={addressesQuery.data?.items ?? []}
+              selectedId={selectedAddressId}
+              onSelect={setSelectedAddressId}
+              isLoading={addressesQuery.isLoading}
+            />
+          </Step>
+          <Step number={2} title="Order review">
+            <ul className="space-y-3">
+              {checkout.items.map((item) => (
+                <li
+                  key={item.sku}
+                  className="flex items-start justify-between gap-4 rounded-md border border-border bg-surface-muted p-4"
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-text">{item.name}</p>
+                    <p className="mt-0.5 text-xs text-text-subtle">SKU: {item.sku}</p>
+                    <p className="mt-1 text-sm text-text-muted">
+                      Qty {item.qty} × {formatINR(item.unitPricePaise)}
+                    </p>
+                    {!item.available ? (
+                      <p className="mt-1 text-xs font-semibold text-danger">
+                        Out of stock
+                      </p>
+                    ) : null}
+                  </div>
+                  <p className="text-sm font-bold text-text">
+                    {formatINR(item.lineTotalPaise)}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </Step>
+          {hasOos ? (
+            <div className="flex items-start gap-2 rounded-md border border-warning/30 bg-warning-soft p-3 text-sm text-warning-foreground">
+              <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+              <p>
+                Some items are out of stock. Please{" "}
+                <Link href="/cart" className="underline">
+                  update your cart
+                </Link>{" "}
+                to proceed.
+              </p>
+            </div>
+          ) : null}
+        </div>
+        <Summary
+          checkout={checkout}
+          canPlace={canPlace}
+          loading={createState.isLoading || initState.isLoading || paying}
+          onPlace={handlePlaceOrder}
+          error={error}
+        />
+      </div>
     </div>
   );
 }
@@ -218,15 +242,15 @@ function Step({
   children: React.ReactNode;
 }) {
   return (
-    <article className="rounded-md border border-neutral-200 bg-white p-5">
-      <h2 className="mb-3 text-sm font-semibold text-neutral-900">
-        <span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-neutral-900 text-xs text-white">
+    <Card padding="lg">
+      <h2 className="mb-4 flex items-center gap-3 text-sm font-semibold uppercase tracking-wide text-text">
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
           {number}
         </span>
         {title}
       </h2>
       {children}
-    </article>
+    </Card>
   );
 }
 
@@ -236,21 +260,23 @@ function AddressPicker(props: {
   onSelect: (id: string) => void;
   isLoading: boolean;
 }) {
-  if (props.isLoading) return <p className="text-sm text-neutral-500">Loading addresses…</p>;
+  if (props.isLoading)
+    return <p className="text-sm text-text-muted">Loading addresses…</p>;
   if (props.addresses.length === 0) {
     return <InlineFirstAddress onCreated={(id) => props.onSelect(id)} />;
   }
   return (
-    <ul className="space-y-2">
+    <ul className="space-y-2.5">
       {props.addresses.map((addr) => {
         const checked = addr.id === props.selectedId;
         return (
           <li key={addr.id}>
             <label
-              className={
-                "flex cursor-pointer items-start gap-3 rounded-md border p-3 " +
-                (checked ? "border-neutral-900 bg-neutral-50" : "border-neutral-200")
-              }
+              className={`flex cursor-pointer items-start gap-3 rounded-md border-2 p-3 transition ${
+                checked
+                  ? "border-primary bg-primary-soft"
+                  : "border-border bg-surface hover:border-primary/40"
+              }`}
             >
               <input
                 type="radio"
@@ -258,23 +284,24 @@ function AddressPicker(props: {
                 value={addr.id}
                 checked={checked}
                 onChange={() => props.onSelect(addr.id)}
-                className="mt-1"
+                className="mt-1 h-4 w-4 accent-primary"
               />
               <div className="flex-1 text-sm">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-neutral-900">{addr.label}</span>
-                  {addr.isDefault && (
-                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-700">
+                  <span className="font-semibold text-text">{addr.label}</span>
+                  {addr.isDefault ? (
+                    <span className="rounded-full bg-success/15 px-2 py-0.5 text-[11px] font-semibold uppercase text-success">
                       Default
                     </span>
-                  )}
+                  ) : null}
                 </div>
-                <p className="text-neutral-800">{addr.fullName}</p>
-                <p className="text-neutral-600">
+                <p className="mt-1 text-text">{addr.fullName}</p>
+                <p className="text-text-muted">
                   {addr.line1}
-                  {addr.line2 ? `, ${addr.line2}` : ""}, {addr.city}, {addr.state} {addr.pincode}
+                  {addr.line2 ? `, ${addr.line2}` : ""}, {addr.city}, {addr.state}{" "}
+                  {addr.pincode}
                 </p>
-                <p className="text-neutral-500">+91 {addr.mobile}</p>
+                <p className="text-text-subtle">+91 {addr.mobile}</p>
               </div>
             </label>
           </li>
@@ -283,9 +310,9 @@ function AddressPicker(props: {
       <li>
         <Link
           href="/account/addresses?return=/checkout"
-          className="text-sm text-neutral-700 underline-offset-2 hover:underline"
+          className="text-sm font-semibold text-primary hover:text-primary-hover"
         >
-          Add a new address
+          + Add a new address
         </Link>
       </li>
     </ul>
@@ -301,57 +328,72 @@ function Summary(props: {
 }) {
   const { checkout } = props;
   return (
-    <aside className="h-fit space-y-3 rounded-md border border-neutral-200 bg-white p-4">
-      <h2 className="text-sm font-semibold text-neutral-900">Order summary</h2>
-      <dl className="space-y-1.5 text-sm">
-        <div className="flex justify-between">
-          <dt className="text-neutral-600">Items ({checkout.itemsCount})</dt>
-          <dd className="text-neutral-900">{formatINR(checkout.subtotalPaise)}</dd>
-        </div>
-        <div className="flex justify-between">
-          <dt className="text-neutral-600">Shipping</dt>
-          <dd className="text-neutral-900">
-            {checkout.shippingFeePaise === 0 ? "FREE" : formatINR(checkout.shippingFeePaise)}
-          </dd>
-        </div>
-        <div className="flex justify-between border-t border-neutral-100 pt-2">
-          <dt className="font-semibold text-neutral-900">Total</dt>
-          <dd className="font-semibold text-neutral-900">{formatINR(checkout.totalPaise)}</dd>
-        </div>
-      </dl>
-      {checkout.shippingFeePaise > 0 && (
-        <p className="text-xs text-neutral-500">
-          Free shipping on orders above {formatINR(checkout.freeShippingThresholdPaise)}.
+    <aside className="lg:sticky lg:top-24 lg:self-start">
+      <Card padding="lg">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-text">
+          Price details
+        </h2>
+        <dl className="space-y-3 text-sm">
+          <div className="flex justify-between">
+            <dt className="text-text-muted">Items ({checkout.itemsCount})</dt>
+            <dd className="text-text">{formatINR(checkout.subtotalPaise)}</dd>
+          </div>
+          <div className="flex justify-between">
+            <dt className="text-text-muted">Shipping</dt>
+            <dd className={checkout.shippingFeePaise === 0 ? "font-semibold text-success" : "text-text"}>
+              {checkout.shippingFeePaise === 0
+                ? "FREE"
+                : formatINR(checkout.shippingFeePaise)}
+            </dd>
+          </div>
+          <div className="flex justify-between border-t border-dashed border-border pt-3 text-base font-bold">
+            <dt className="text-text">Total</dt>
+            <dd className="text-text">{formatINR(checkout.totalPaise)}</dd>
+          </div>
+        </dl>
+        {checkout.shippingFeePaise > 0 ? (
+          <p className="mt-3 text-xs text-text-subtle">
+            Free shipping on orders above {formatINR(checkout.freeShippingThresholdPaise)}.
+          </p>
+        ) : null}
+        {props.error ? (
+          <div className="mt-3 flex items-start gap-2 rounded-md border border-danger/30 bg-danger-soft px-3 py-2 text-xs text-danger">
+            <AlertCircle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+            {props.error}
+          </div>
+        ) : null}
+        <Button
+          variant="accent"
+          size="lg"
+          fullWidth
+          disabled={!props.canPlace}
+          onClick={props.onPlace}
+          leadingIcon={<Lock className="h-4 w-4" />}
+          className="mt-5"
+        >
+          {props.loading ? "Processing…" : `Place order · ${formatINR(checkout.totalPaise)}`}
+        </Button>
+        <p className="mt-4 inline-flex items-center gap-2 text-xs text-text-muted">
+          <ShieldCheck className="h-4 w-4 text-success" />
+          Safe & secure payments
         </p>
-      )}
-      {props.error && (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-          {props.error}
-        </p>
-      )}
-      <button
-        type="button"
-        onClick={props.onPlace}
-        disabled={!props.canPlace}
-        className="w-full rounded-md bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {props.loading ? "Processing…" : `Place order · ${formatINR(checkout.totalPaise)}`}
-      </button>
+      </Card>
     </aside>
   );
 }
 
 function ErrorPanel({ message }: { message: string }) {
   return (
-    <div className="rounded-md border border-red-200 bg-red-50 p-6 text-center">
-      <p className="text-red-700">{message}</p>
+    <Card padding="lg" className="text-center">
+      <AlertCircle className="mx-auto h-10 w-10 text-danger" />
+      <p className="mt-3 text-base font-semibold text-text">{message}</p>
       <Link
         href="/cart"
-        className="mt-3 inline-block rounded-md bg-neutral-900 px-4 py-2 text-sm font-semibold text-white"
+        className="mt-4 inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-hover"
       >
         Back to cart
       </Link>
-    </div>
+    </Card>
   );
 }
 
@@ -359,9 +401,7 @@ function InlineFirstAddress({ onCreated }: { onCreated: (id: string) => void }) 
   const [createAddress, state] = useCreateAddressMutation();
   return (
     <div className="space-y-3 text-sm">
-      <p className="text-neutral-700">
-        Add your first delivery address to continue.
-      </p>
+      <p className="text-text-muted">Add your first delivery address to continue.</p>
       <AddressForm
         submitLabel="Save and use this address"
         submittingLabel="Saving…"

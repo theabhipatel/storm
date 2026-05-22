@@ -1,5 +1,6 @@
 "use client";
 
+import { Cookie } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -36,31 +37,26 @@ export function CookieConsent() {
     <div
       role="region"
       aria-label="Cookie consent"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white shadow-lg"
+      className="fixed inset-x-2 bottom-20 z-40 rounded-lg border border-border bg-surface shadow-elevated md:inset-x-auto md:bottom-6 md:left-6 md:right-6 md:mx-auto md:max-w-3xl"
     >
-      <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 text-sm text-neutral-700 sm:flex-row sm:items-center sm:gap-4 sm:px-6 lg:px-8">
+      <div className="flex flex-col gap-3 px-4 py-3 text-sm text-text sm:flex-row sm:items-center sm:gap-4 sm:px-5">
+        <Cookie className="h-6 w-6 flex-shrink-0 text-primary" aria-hidden="true" />
         <p className="flex-1">
-          We use essential cookies for sign-in and your cart. By continuing you
-          accept our use of these cookies.{" "}
-          <Link href="/privacy-policy" className="font-medium underline-offset-2 hover:underline">
+          We use essential cookies for sign-in and your cart.{" "}
+          <Link
+            href="/privacy-policy"
+            className="font-semibold text-primary hover:text-primary-hover"
+          >
             Learn more
           </Link>
         </p>
-        <div className="flex shrink-0 gap-2">
-          <Link
-            href="/privacy-policy"
-            className="rounded-md border border-neutral-300 px-3 py-1.5 text-xs font-medium text-neutral-700 hover:border-neutral-400"
-          >
-            Learn more
-          </Link>
-          <button
-            type="button"
-            onClick={accept}
-            className="rounded-md bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-neutral-800"
-          >
-            Accept
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={accept}
+          className="rounded-md bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary-hover sm:flex-shrink-0"
+        >
+          Accept
+        </button>
       </div>
     </div>
   );

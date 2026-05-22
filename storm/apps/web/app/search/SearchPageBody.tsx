@@ -9,13 +9,23 @@ export function SearchPageBody() {
   const q = params.get("q") ?? "";
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-      <h1 className="text-2xl font-semibold text-neutral-900">
-        {q ? <>Results for &ldquo;{q}&rdquo;</> : "Search"}
-      </h1>
-      <div className="mt-6">
-        <ProductListing surface="search" />
+    <main className="mx-auto max-w-page px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mb-5">
+        <h1 className="text-2xl font-bold text-text">
+          {q ? (
+            <>
+              Results for{" "}
+              <span className="text-primary">&ldquo;{q}&rdquo;</span>
+            </>
+          ) : (
+            "All products"
+          )}
+        </h1>
+        <p className="mt-1 text-sm text-text-muted">
+          Use filters to narrow down what you&apos;re looking for.
+        </p>
       </div>
+      <ProductListing surface="search" />
     </main>
   );
 }

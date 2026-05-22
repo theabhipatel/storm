@@ -1,46 +1,52 @@
+import { Mail, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
 
 const COLUMNS: { heading: string; links: { label: string; href: string }[] }[] = [
   {
-    heading: "Storm",
+    heading: "About",
     links: [
-      { label: "About", href: "/about" },
-      { label: "Contact", href: "/contact" },
+      { label: "About us", href: "/about" },
+      { label: "Contact us", href: "/contact" },
+      { label: "FAQ", href: "/faq" },
     ],
   },
   {
     heading: "Help",
     links: [
-      { label: "FAQ", href: "/faq" },
       { label: "Shipping policy", href: "/shipping-policy" },
       { label: "Returns policy", href: "/returns-policy" },
+      { label: "My orders", href: "/orders" },
     ],
   },
   {
-    heading: "Legal",
+    heading: "Policy",
     links: [
       { label: "Privacy policy", href: "/privacy-policy" },
       { label: "Terms of service", href: "/terms" },
+      { label: "Cookie policy", href: "/privacy-policy" },
     ],
   },
 ];
 
-const PAYMENT_BADGES = ["Visa", "Mastercard", "UPI", "RuPay"];
+const PAYMENT_BADGES = ["Visa", "Mastercard", "UPI", "RuPay", "NetBanking"];
 
 export function SiteFooter() {
   return (
-    <footer className="mt-12 border-t border-neutral-200 bg-white">
-      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
+    <footer className="mt-16 bg-dark text-dark-foreground">
+      <div className="mx-auto max-w-page px-4 py-12 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-2 gap-10 sm:grid-cols-4">
           {COLUMNS.map((col) => (
             <div key={col.heading}>
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-neutral-900">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-dark-foreground-muted">
                 {col.heading}
               </h3>
-              <ul className="mt-3 space-y-2 text-sm text-neutral-600">
+              <ul className="mt-4 space-y-2.5 text-sm">
                 {col.links.map((l) => (
-                  <li key={l.href}>
-                    <Link href={l.href} className="hover:text-neutral-900">
+                  <li key={`${col.heading}-${l.label}`}>
+                    <Link
+                      href={l.href}
+                      className="text-dark-foreground transition hover:text-white"
+                    >
                       {l.label}
                     </Link>
                   </li>
@@ -49,49 +55,37 @@ export function SiteFooter() {
             </div>
           ))}
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-neutral-900">
-              Stay in touch
+            <h3 className="text-xs font-bold uppercase tracking-wider text-dark-foreground-muted">
+              Reach us
             </h3>
-            <p className="mt-3 text-sm text-neutral-600">
-              Get product news and offers.
-            </p>
-            <form
-              action="#"
-              method="post"
-              className="mt-3 flex gap-2"
-              aria-label="Email signup (coming soon)"
-            >
-              <label className="sr-only" htmlFor="footer-email">
-                Email
-              </label>
-              <input
-                id="footer-email"
-                type="email"
-                placeholder="you@example.com"
-                disabled
-                className="flex-1 rounded-md border border-neutral-300 bg-neutral-50 px-3 py-1.5 text-xs text-neutral-500"
-              />
-              <button
-                type="button"
-                disabled
-                className="rounded-md bg-neutral-300 px-3 py-1.5 text-xs font-medium text-white"
-              >
-                Notify me
-              </button>
-            </form>
-            <p className="mt-1 text-[11px] text-neutral-400">
-              Email signup launches soon.
-            </p>
+            <ul className="mt-4 space-y-2.5 text-sm text-dark-foreground">
+              <li className="flex items-start gap-2">
+                <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-dark-foreground-muted" />
+                Bengaluru, India
+              </li>
+              <li className="flex items-start gap-2">
+                <Phone className="mt-0.5 h-4 w-4 flex-shrink-0 text-dark-foreground-muted" />
+                <a href="tel:+911800000000" className="hover:text-white">
+                  1800 000 000
+                </a>
+              </li>
+              <li className="flex items-start gap-2">
+                <Mail className="mt-0.5 h-4 w-4 flex-shrink-0 text-dark-foreground-muted" />
+                <a href="mailto:help@storm.in" className="hover:text-white">
+                  help@storm.in
+                </a>
+              </li>
+            </ul>
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col items-start justify-between gap-4 border-t border-neutral-100 pt-6 text-xs text-neutral-500 sm:flex-row sm:items-center">
+        <div className="mt-10 flex flex-col items-start justify-between gap-4 border-t border-dark-soft pt-6 text-xs text-dark-foreground-muted sm:flex-row sm:items-center">
           <p>© {new Date().getFullYear()} Storm Commerce Pvt. Ltd. All rights reserved.</p>
-          <ul className="flex items-center gap-2" aria-label="Accepted payments">
+          <ul className="flex flex-wrap items-center gap-2" aria-label="Accepted payments">
             {PAYMENT_BADGES.map((p) => (
               <li
                 key={p}
-                className="rounded border border-neutral-200 bg-neutral-50 px-2 py-1 text-[11px] font-semibold text-neutral-600"
+                className="rounded border border-dark-soft bg-dark-soft px-2.5 py-1 text-[11px] font-semibold text-dark-foreground"
               >
                 {p}
               </li>

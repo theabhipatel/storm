@@ -50,16 +50,18 @@ export function AddressForm({
       })}
       className="space-y-4"
     >
-      <Field
-        label="Label (e.g. Home, Office)"
-        {...register("label")}
-        error={errors.label?.message}
-      />
-      <Field
-        label="Full name"
-        {...register("fullName")}
-        error={errors.fullName?.message}
-      />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Field
+          label="Label (e.g. Home, Office)"
+          {...register("label")}
+          error={errors.label?.message}
+        />
+        <Field
+          label="Full name"
+          {...register("fullName")}
+          error={errors.fullName?.message}
+        />
+      </div>
       <Field
         label="Mobile (10 digits, starts 6-9)"
         {...register("mobile")}
@@ -71,17 +73,19 @@ export function AddressForm({
         {...register("line1")}
         error={errors.line1?.message}
       />
-      <Field
-        label="Address line 2 (optional)"
-        {...register("line2")}
-        error={errors.line2?.message}
-      />
-      <Field
-        label="Landmark (optional)"
-        {...register("landmark")}
-        error={errors.landmark?.message}
-      />
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Field
+          label="Address line 2 (optional)"
+          {...register("line2")}
+          error={errors.line2?.message}
+        />
+        <Field
+          label="Landmark (optional)"
+          {...register("landmark")}
+          error={errors.landmark?.message}
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
         <Field label="City" {...register("city")} error={errors.city?.message} />
         <Field
           label="Pincode"
@@ -94,11 +98,11 @@ export function AddressForm({
         name="state"
         render={({ field }) => (
           <label className="block">
-            <span className="text-sm font-medium text-neutral-800">State</span>
+            <span className="text-sm font-medium text-text">State</span>
             <select
               {...field}
               value={field.value ?? ""}
-              className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+              className="mt-1.5 block w-full rounded-md border border-border bg-surface px-3 py-2.5 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
             >
               <option value="" disabled>
                 Select a state
@@ -110,14 +114,18 @@ export function AddressForm({
               ))}
             </select>
             {errors.state ? (
-              <p className="mt-1 text-xs text-red-600">{errors.state.message}</p>
+              <p className="mt-1 text-xs text-danger">{errors.state.message}</p>
             ) : null}
           </label>
         )}
       />
       {allowSetDefault ? (
-        <label className="flex items-center gap-2 text-sm text-neutral-700">
-          <input type="checkbox" {...register("isDefault")} />
+        <label className="flex items-center gap-2 text-sm text-text">
+          <input
+            type="checkbox"
+            {...register("isDefault")}
+            className="h-4 w-4 rounded border-border accent-primary"
+          />
           Set as default address
         </label>
       ) : null}

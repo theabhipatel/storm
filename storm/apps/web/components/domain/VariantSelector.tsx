@@ -19,31 +19,36 @@ export function VariantSelector({
   if (variants.length === 0) return null;
   const selected = variants.find((v) => v.id === selectedId) ?? variants[0]!;
   return (
-    <div className="space-y-2">
-      <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-        Variant
+    <div className="space-y-2.5">
+      <p className="text-xs font-semibold uppercase tracking-wide text-text-subtle">
+        Choose variant
       </p>
       <ul className="flex flex-wrap gap-2">
-        {variants.map((v) => (
-          <li key={v.id}>
-            <button
-              type="button"
-              onClick={() => setSelectedId(v.id)}
-              className={
-                "rounded-md border px-3 py-1.5 text-sm " +
-                (v.id === selected.id
-                  ? "border-neutral-900 bg-neutral-900 text-white"
-                  : "border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-50")
-              }
-            >
-              {v.name}
-            </button>
-          </li>
-        ))}
+        {variants.map((v) => {
+          const active = v.id === selected.id;
+          return (
+            <li key={v.id}>
+              <button
+                type="button"
+                onClick={() => setSelectedId(v.id)}
+                className={`rounded-md border-2 px-3.5 py-1.5 text-sm font-medium transition ${
+                  active
+                    ? "border-primary bg-primary-soft text-primary"
+                    : "border-border bg-surface text-text hover:border-primary/40"
+                }`}
+                aria-pressed={active}
+              >
+                {v.name}
+              </button>
+            </li>
+          );
+        })}
       </ul>
-      <p className="text-sm text-neutral-700">
-        SKU: <span className="font-mono">{selected.sku}</span> · Price:{" "}
-        {formatINR(selected.price ?? basePrice, currency)}
+      <p className="text-xs text-text-muted">
+        SKU: <span className="font-mono text-text">{selected.sku}</span> · Price:{" "}
+        <span className="font-semibold text-text">
+          {formatINR(selected.price ?? basePrice, currency)}
+        </span>
       </p>
     </div>
   );

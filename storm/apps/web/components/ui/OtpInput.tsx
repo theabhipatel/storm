@@ -14,7 +14,7 @@ export const OtpInput = forwardRef<HTMLInputElement, OtpInputProps>(function Otp
   const inputId = id ?? "otp";
   return (
     <label htmlFor={inputId} className="block">
-      <span className="text-sm font-medium text-neutral-800">{label}</span>
+      <span className="text-sm font-medium text-text">{label}</span>
       <input
         ref={ref}
         id={inputId}
@@ -25,12 +25,14 @@ export const OtpInput = forwardRef<HTMLInputElement, OtpInputProps>(function Otp
         pattern="\d{6}"
         {...rest}
         className={
-          "mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-center text-lg tracking-[0.5em] " +
-          "focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900 " +
-          (error ? "border-red-400 focus:border-red-500 focus:ring-red-500" : "")
+          "mt-1.5 block w-full rounded-md border bg-surface px-3 py-3 text-center text-xl font-semibold tracking-[0.5em] shadow-sm transition " +
+          "focus:outline-none focus:ring-2 focus:ring-ring/30 " +
+          (error
+            ? "border-danger focus:border-danger focus:ring-danger/30"
+            : "border-border focus:border-primary")
         }
       />
-      {error ? <p className="mt-1 text-xs text-red-600">{error}</p> : null}
+      {error ? <p className="mt-1 text-xs text-danger">{error}</p> : null}
     </label>
   );
 });

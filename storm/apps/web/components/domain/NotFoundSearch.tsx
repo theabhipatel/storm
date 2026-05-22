@@ -1,5 +1,6 @@
 "use client";
 
+import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -16,17 +17,20 @@ export function NotFoundSearch() {
 
   return (
     <form onSubmit={onSubmit} className="flex w-full gap-2">
-      <input
-        type="search"
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder="Search products, brands, categories…"
-        aria-label="Search"
-        className="flex-1 rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
-      />
+      <div className="relative flex-1">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-subtle" />
+        <input
+          type="search"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search products, brands, categories…"
+          aria-label="Search"
+          className="block w-full rounded-md border border-border bg-surface pl-9 pr-3 py-2.5 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
+        />
+      </div>
       <button
         type="submit"
-        className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800"
+        className="rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary-hover"
       >
         Search
       </button>

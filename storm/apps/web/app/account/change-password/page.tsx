@@ -84,9 +84,11 @@ export default function ChangePasswordPage() {
           </FormError>
         ) : null}
         {isSuccess ? (
-          <p className="text-sm text-green-700">Password updated. Other sessions have been signed out.</p>
+          <p className="text-sm font-medium text-success">
+            Password updated. Other sessions have been signed out.
+          </p>
         ) : null}
-        <Button type="submit" disabled={isLoading}>
+        <Button type="submit" disabled={isLoading} fullWidth>
           {isLoading ? "Saving..." : "Update password"}
         </Button>
       </form>

@@ -1,15 +1,14 @@
 "use client";
 
+import { ChevronDown, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { FacetsResponse } from "@storm/contracts";
 
 import { formatINR } from "../../lib/format";
 
 export interface FilterSidebarProps {
   facets: FacetsResponse | null | undefined;
-  // When set, the category filter is fixed by the parent route (e.g. /c/[slug])
-  // and the category facet section is hidden — the user has already drilled in.
   hideCategoryFacet?: boolean;
 }
 
@@ -66,11 +65,18 @@ export function FilterSidebar({ facets, hideCategoryFacet }: FilterSidebarProps)
     });
   }
 
+  function setCategory(value: string | null): void {
+    applyParam((next) => {
+      if (value) next.set("categoryId", value);
+      else next.delete("categoryId");
+    });
+  }
+
   function clearAll(): void {
     applyParam((next) => {
       const q = next.get("q");
       const sort = next.get("sort");
-      next.forEach((_v, k) => next.delete(k));
+      [...next.keys()].forEach((k) => next.delete(k));
       if (q) next.set("q", q);
       if (sort) next.set("sort", sort);
     });
@@ -79,59 +85,61 @@ export function FilterSidebar({ facets, hideCategoryFacet }: FilterSidebarProps)
   const brands = facets?.brands ?? [];
   const priceBuckets = facets?.priceBuckets ?? [];
   const categories = facets?.categories ?? [];
-
-  function setCategory(value: string | null): void {
-    applyParam((next) => {
-      if (value) next.set("categoryId", value);
-      else next.delete("categoryId");
-    });
-  }
+  const hasAnyFilter =
+    !!params.get("brandId") ||
+    !!params.get("priceMin") ||
+    !!params.get("priceMax") ||
+    !!params.get("inStock") ||
+    !!params.get("categoryId");
 
   return (
-    <aside className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-neutral-900">Filters</h2>
-        <button
-          type="button"
-          onClick={clearAll}
-          className="text-xs text-neutral-500 underline hover:text-neutral-900"
-        >
-          Clear all
-        </button>
+    <aside className="overflow-hidden rounded-lg border border-border bg-surface shadow-card">
+      <div className="flex items-center justify-between border-b border-border px-4 py-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-text">Filters</h2>
+        {hasAnyFilter ? (
+          <button
+            type="button"
+            onClick={clearAll}
+            className="text-xs font-semibold text-primary hover:text-primary-hover"
+          >
+            Clear all
+          </button>
+        ) : null}
       </div>
 
-      <section>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-          Price (₹)
-        </h3>
+      <FilterGroup title="Price">
         <div className="flex items-center gap-2">
           <input
             type="number"
             min={0}
             placeholder="Min"
             value={minDraft ? paiseToRupees(minDraft) : ""}
-            onChange={(e) => setMinDraft(e.target.value ? `${Number(e.target.value) * 100}` : "")}
-            className="w-20 rounded-md border border-neutral-300 px-2 py-1 text-sm"
+            onChange={(e) =>
+              setMinDraft(e.target.value ? `${Number(e.target.value) * 100}` : "")
+            }
+            className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
           />
-          <span className="text-neutral-400">–</span>
+          <span className="text-text-subtle">–</span>
           <input
             type="number"
             min={0}
             placeholder="Max"
             value={maxDraft ? paiseToRupees(maxDraft) : ""}
-            onChange={(e) => setMaxDraft(e.target.value ? `${Number(e.target.value) * 100}` : "")}
-            className="w-20 rounded-md border border-neutral-300 px-2 py-1 text-sm"
+            onChange={(e) =>
+              setMaxDraft(e.target.value ? `${Number(e.target.value) * 100}` : "")
+            }
+            className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
           />
           <button
             type="button"
             onClick={applyPrice}
-            className="rounded-md bg-neutral-900 px-2 py-1 text-xs font-medium text-white hover:bg-neutral-800"
+            className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary-hover"
           >
             Go
           </button>
         </div>
         {priceBuckets.length > 0 && (
-          <ul className="mt-3 space-y-1 text-sm">
+          <ul className="mt-3 space-y-1.5 text-sm">
             {priceBuckets.map((b, i) => (
               <li key={i}>
                 <button
@@ -143,87 +151,114 @@ export function FilterSidebar({ facets, hideCategoryFacet }: FilterSidebarProps)
                       else next.delete("priceMax");
                     })
                   }
-                  className="flex w-full items-center justify-between text-left text-neutral-700 hover:text-neutral-900"
+                  className="flex w-full items-center justify-between rounded px-1 py-0.5 text-left text-text hover:text-primary"
                 >
                   <span>
                     {formatINR(b.from, "INR")}
                     {" – "}
                     {b.to !== null ? formatINR(b.to, "INR") : "above"}
                   </span>
-                  <span className="text-xs text-neutral-500">{b.count}</span>
+                  <span className="text-xs text-text-subtle">{b.count}</span>
                 </button>
               </li>
             ))}
           </ul>
         )}
-      </section>
+      </FilterGroup>
 
-      <section>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-          Availability
-        </h3>
-        <label className="flex items-center gap-2 text-sm text-neutral-700">
+      <FilterGroup title="Availability">
+        <label className="flex items-center gap-2 text-sm text-text">
           <input
             type="checkbox"
             checked={inStock}
             onChange={(e) => setInStock(e.target.checked)}
+            className="h-4 w-4 rounded border-border accent-primary"
           />
           In stock only{" "}
           {facets ? (
-            <span className="text-xs text-neutral-500">({facets.inStockCount})</span>
+            <span className="text-xs text-text-subtle">({facets.inStockCount})</span>
           ) : null}
         </label>
-      </section>
+      </FilterGroup>
 
       {!hideCategoryFacet && categories.length > 0 && (
-        <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-            Category
-          </h3>
-          <ul className="space-y-1 text-sm">
-            {categories.map((c) => (
-              <li key={c.value}>
-                <button
-                  type="button"
-                  onClick={() => setCategory(c.value === selectedCategory ? null : c.value)}
-                  className={`flex w-full items-center justify-between text-left text-neutral-700 hover:text-neutral-900 ${
-                    c.value === selectedCategory ? "font-semibold text-neutral-900" : ""
-                  }`}
-                >
-                  <span className="flex-1 truncate">{c.label}</span>
-                  <span className="text-xs text-neutral-500">{c.count}</span>
-                </button>
-              </li>
-            ))}
+        <FilterGroup title="Category">
+          <ul className="space-y-1.5 text-sm">
+            {categories.map((c) => {
+              const active = c.value === selectedCategory;
+              return (
+                <li key={c.value}>
+                  <button
+                    type="button"
+                    onClick={() => setCategory(active ? null : c.value)}
+                    className={`flex w-full items-center justify-between gap-2 rounded px-1 py-0.5 text-left transition ${
+                      active ? "font-semibold text-primary" : "text-text hover:text-primary"
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5 truncate">
+                      {active ? <X className="h-3 w-3 flex-shrink-0" /> : null}
+                      {c.label}
+                    </span>
+                    <span className="text-xs text-text-subtle">{c.count}</span>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
-        </section>
+        </FilterGroup>
       )}
 
-      <section>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-          Brand
-        </h3>
+      <FilterGroup title="Brand">
         {brands.length === 0 ? (
-          <p className="text-xs text-neutral-500">No options</p>
+          <p className="text-xs text-text-subtle">No options</p>
         ) : (
-          <ul className="space-y-1 text-sm">
+          <ul className="max-h-60 space-y-1.5 overflow-y-auto pr-1 text-sm">
             {brands.map((b) => (
               <li key={b.value}>
-                <label className="flex items-center gap-2 text-neutral-700">
+                <label className="flex cursor-pointer items-center gap-2 text-text">
                   <input
                     type="checkbox"
                     checked={selectedBrands.has(b.value)}
                     onChange={() => toggleBrand(b.value)}
+                    className="h-4 w-4 rounded border-border accent-primary"
                   />
                   <span className="flex-1 truncate capitalize">{b.label}</span>
-                  <span className="text-xs text-neutral-500">{b.count}</span>
+                  <span className="text-xs text-text-subtle">{b.count}</span>
                 </label>
               </li>
             ))}
           </ul>
         )}
-      </section>
+      </FilterGroup>
     </aside>
+  );
+}
+
+function FilterGroup({
+  title,
+  children,
+  defaultOpen = true,
+}: {
+  title: string;
+  children: ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="border-b border-border last:border-b-0">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text"
+        aria-expanded={open}
+      >
+        {title}
+        <ChevronDown
+          className={`h-4 w-4 text-text-subtle transition ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open ? <div className="px-4 pb-4">{children}</div> : null}
+    </div>
   );
 }
 

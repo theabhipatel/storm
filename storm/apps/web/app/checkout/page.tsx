@@ -23,10 +23,10 @@ export default function CheckoutPage() {
   }, [bootstrapped, user, router]);
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-      <h1 className="mb-6 text-2xl font-semibold text-neutral-900">Checkout</h1>
+    <main className="mx-auto max-w-page px-4 py-6 sm:px-6 lg:px-8">
+      <h1 className="mb-5 text-2xl font-bold text-text">Checkout</h1>
       {!bootstrapped || !user ? (
-        <p className="py-10 text-center text-neutral-500">Loading…</p>
+        <p className="py-10 text-center text-sm text-text-muted">Loading…</p>
       ) : (
         <CheckoutView />
       )}

@@ -1,9 +1,22 @@
 "use client";
 
+import {
+  Heart,
+  Home,
+  LayoutGrid,
+  LogIn,
+  LogOut,
+  Menu,
+  Package,
+  ShoppingCart,
+  User,
+  X,
+} from "lucide-react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 
-import { useCurrentUser } from "../../features/auth/auth.hooks";
+import { useCurrentUser, useLogout } from "../../features/auth/auth.hooks";
 
 interface SimpleCategory {
   id: string;
@@ -14,6 +27,7 @@ interface SimpleCategory {
 export function MobileDrawer({ categories }: { categories: SimpleCategory[] }) {
   const [open, setOpen] = useState(false);
   const user = useCurrentUser();
+  const [logout] = useLogout();
 
   useEffect(() => {
     if (!open) return;
@@ -28,17 +42,21 @@ export function MobileDrawer({ categories }: { categories: SimpleCategory[] }) {
     };
   }, [open]);
 
+  function close() {
+    setOpen(false);
+  }
+
   return (
     <>
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-neutral-700 hover:bg-neutral-100"
+        className="inline-flex h-10 w-10 items-center justify-center rounded-md text-primary-foreground hover:bg-white/10 md:hidden"
         aria-label="Open menu"
         aria-expanded={open}
         aria-controls="storm-mobile-drawer"
       >
-        <span aria-hidden="true" className="block h-0.5 w-5 bg-current shadow-[0_-6px_0_currentColor,0_6px_0_currentColor]" />
+        <Menu className="h-5 w-5" />
       </button>
       {open ? (
         <div
@@ -51,95 +69,123 @@ export function MobileDrawer({ categories }: { categories: SimpleCategory[] }) {
           <button
             type="button"
             aria-label="Close menu"
-            onClick={() => setOpen(false)}
-            className="absolute inset-0 cursor-default bg-neutral-900/40"
+            onClick={close}
+            className="absolute inset-0 cursor-default bg-overlay/50"
           />
-          <aside className="absolute inset-y-0 left-0 flex w-[80%] max-w-sm flex-col bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
-              <span className="text-base font-semibold text-neutral-900">Menu</span>
+          <aside className="absolute inset-y-0 left-0 flex w-[85%] max-w-sm flex-col bg-surface shadow-elevated">
+            <div className="flex items-center justify-between bg-primary px-4 py-4 text-primary-foreground">
+              <div>
+                <p className="text-xs uppercase tracking-wide opacity-80">
+                  {user ? "Welcome back" : "Welcome to"}
+                </p>
+                <p className="text-lg font-bold">
+                  {user ? user.name : "Storm"}
+                </p>
+              </div>
               <button
                 type="button"
-                onClick={() => setOpen(false)}
-                className="rounded-md p-1.5 text-neutral-600 hover:bg-neutral-100"
+                onClick={close}
+                className="rounded-full p-1.5 text-primary-foreground hover:bg-white/10"
                 aria-label="Close"
               >
-                ✕
+                <X className="h-5 w-5" />
               </button>
             </div>
-            <nav className="flex-1 overflow-y-auto px-4 py-4">
-              <ul className="space-y-1 text-sm">
-                <DrawerLink href="/" onNavigate={() => setOpen(false)}>
+
+            <nav className="flex-1 overflow-y-auto py-2">
+              <DrawerSection>
+                <DrawerLink href="/" icon={<Home className="h-4 w-4" />} onClick={close}>
                   Home
                 </DrawerLink>
-                <DrawerLink href="/search" onNavigate={() => setOpen(false)}>
+                <DrawerLink
+                  href="/search"
+                  icon={<LayoutGrid className="h-4 w-4" />}
+                  onClick={close}
+                >
                   All products
                 </DrawerLink>
-                <DrawerLink href="/cart" onNavigate={() => setOpen(false)}>
+                <DrawerLink
+                  href="/cart"
+                  icon={<ShoppingCart className="h-4 w-4" />}
+                  onClick={close}
+                >
                   Cart
                 </DrawerLink>
-                <DrawerLink href="/wishlist" onNavigate={() => setOpen(false)}>
+                <DrawerLink
+                  href="/wishlist"
+                  icon={<Heart className="h-4 w-4" />}
+                  onClick={close}
+                >
                   Wishlist
                 </DrawerLink>
-              </ul>
+              </DrawerSection>
 
               {categories.length > 0 ? (
-                <>
-                  <h3 className="mt-6 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                    Categories
-                  </h3>
-                  <ul className="mt-2 space-y-1 text-sm">
-                    {categories.map((c) => (
-                      <DrawerLink
-                        key={c.id}
-                        href={`/c/${c.slug}`}
-                        onNavigate={() => setOpen(false)}
-                      >
-                        {c.name}
-                      </DrawerLink>
-                    ))}
-                  </ul>
-                </>
+                <DrawerSection title="Categories">
+                  {categories.map((c) => (
+                    <DrawerLink key={c.id} href={`/c/${c.slug}`} onClick={close}>
+                      {c.name}
+                    </DrawerLink>
+                  ))}
+                </DrawerSection>
               ) : null}
 
-              <h3 className="mt-6 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                Account
-              </h3>
-              <ul className="mt-2 space-y-1 text-sm">
+              <DrawerSection title="Account">
                 {user ? (
                   <>
-                    <DrawerLink href="/account" onNavigate={() => setOpen(false)}>
-                      Account
+                    <DrawerLink
+                      href="/account"
+                      icon={<User className="h-4 w-4" />}
+                      onClick={close}
+                    >
+                      My account
                     </DrawerLink>
-                    <DrawerLink href="/orders" onNavigate={() => setOpen(false)}>
-                      Orders
+                    <DrawerLink
+                      href="/orders"
+                      icon={<Package className="h-4 w-4" />}
+                      onClick={close}
+                    >
+                      My orders
                     </DrawerLink>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void logout();
+                        close();
+                      }}
+                      className="flex w-full items-center gap-3 px-5 py-2.5 text-sm font-medium text-text hover:bg-surface-muted"
+                    >
+                      <LogOut className="h-4 w-4 text-text-subtle" />
+                      Sign out
+                    </button>
                   </>
                 ) : (
                   <>
-                    <DrawerLink href="/auth/login" onNavigate={() => setOpen(false)}>
+                    <DrawerLink
+                      href="/auth/login"
+                      icon={<LogIn className="h-4 w-4" />}
+                      onClick={close}
+                    >
                       Log in
                     </DrawerLink>
-                    <DrawerLink href="/auth/signup" onNavigate={() => setOpen(false)}>
+                    <DrawerLink href="/auth/signup" onClick={close}>
                       Sign up
                     </DrawerLink>
                   </>
                 )}
-              </ul>
+              </DrawerSection>
 
-              <h3 className="mt-6 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                More
-              </h3>
-              <ul className="mt-2 space-y-1 text-sm">
-                <DrawerLink href="/about" onNavigate={() => setOpen(false)}>
+              <DrawerSection title="More">
+                <DrawerLink href="/about" onClick={close}>
                   About
                 </DrawerLink>
-                <DrawerLink href="/contact" onNavigate={() => setOpen(false)}>
+                <DrawerLink href="/contact" onClick={close}>
                   Contact
                 </DrawerLink>
-                <DrawerLink href="/faq" onNavigate={() => setOpen(false)}>
+                <DrawerLink href="/faq" onClick={close}>
                   FAQ
                 </DrawerLink>
-              </ul>
+              </DrawerSection>
             </nav>
           </aside>
         </div>
@@ -148,22 +194,44 @@ export function MobileDrawer({ categories }: { categories: SimpleCategory[] }) {
   );
 }
 
+function DrawerSection({
+  title,
+  children,
+}: {
+  title?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="border-b border-border py-2 last:border-b-0">
+      {title ? (
+        <h3 className="px-5 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-text-subtle">
+          {title}
+        </h3>
+      ) : null}
+      <ul>{children}</ul>
+    </div>
+  );
+}
+
 function DrawerLink({
   href,
   children,
-  onNavigate,
+  icon,
+  onClick,
 }: {
   href: string;
-  children: React.ReactNode;
-  onNavigate: () => void;
+  children: ReactNode;
+  icon?: ReactNode;
+  onClick: () => void;
 }) {
   return (
     <li>
       <Link
         href={href}
-        onClick={onNavigate}
-        className="block rounded-md px-3 py-2 text-neutral-800 hover:bg-neutral-50"
+        onClick={onClick}
+        className="flex items-center gap-3 px-5 py-2.5 text-sm font-medium text-text hover:bg-surface-muted"
       >
+        {icon ? <span className="text-text-subtle">{icon}</span> : null}
         {children}
       </Link>
     </li>

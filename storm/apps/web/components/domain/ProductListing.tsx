@@ -1,26 +1,29 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Filter, X } from "lucide-react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import type { SearchHit, SearchResponse } from "@storm/contracts";
 
 import { useFacetsQuery, useSearchQuery } from "../../features/search/search.api";
 import type { SearchQueryArgs } from "../../features/search/search.api";
+import { Button } from "../ui/Button";
 import { ProductGridSkeleton } from "../ui/Skeletons";
 import { FilterSidebar } from "./FilterSidebar";
 import { ProductGrid } from "./ProductCard";
 import { SortDropdown } from "./SortDropdown";
 
 export interface ProductListingProps {
-  // Optional initial server-rendered page (skips first fetch).
   initial?: SearchResponse;
-  // Forced filter not driven by URL — used by /c/[slug] to scope results.
   forcedCategoryId?: string;
-  // Used to pick the empty-state copy.
   surface?: "search" | "category";
 }
 
-export function ProductListing({ initial, forcedCategoryId, surface = "search" }: ProductListingProps) {
+export function ProductListing({
+  initial,
+  forcedCategoryId,
+  surface = "search",
+}: ProductListingProps) {
   const params = useSearchParams();
   const args = useMemo<SearchQueryArgs>(() => {
     const out: SearchQueryArgs = {};
@@ -80,37 +83,40 @@ export function ProductListing({ initial, forcedCategoryId, surface = "search" }
     !!params.get("inStock") ||
     (!forcedCategoryId && !!params.get("categoryId"));
 
+  const total = facets?.totalCount ?? accum.length;
+
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_1fr]">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[260px_1fr] lg:gap-6">
       <div className="hidden lg:block">
         <FilterSidebar facets={facets} hideCategoryFacet={!!forcedCategoryId} />
       </div>
       <div>
-        <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="mb-3 flex items-center justify-between gap-3 rounded-lg border border-border bg-surface px-3 py-2 shadow-card sm:px-4">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setDrawerOpen(true)}
-              className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-900 hover:bg-neutral-50 lg:hidden"
+              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-sm font-medium text-text hover:bg-surface-muted lg:hidden"
               aria-label="Open filters"
             >
+              <Filter className="h-4 w-4" />
               Filters
             </button>
-            <p className="text-sm text-neutral-600">
-              {facets?.totalCount ?? accum.length}{" "}
-              {(facets?.totalCount ?? accum.length) === 1 ? "result" : "results"}
+            <p className="text-sm text-text-muted">
+              <span className="font-semibold text-text">{total}</span>{" "}
+              {total === 1 ? "result" : "results"}
             </p>
           </div>
           <SortDropdown />
         </div>
         {isError ? (
-          <div className="rounded-md border border-red-200 bg-red-50 p-6 text-sm text-red-900">
+          <div className="rounded-lg border border-danger/30 bg-danger-soft p-6 text-sm text-text">
             Failed to load results. Try again.
           </div>
         ) : accum.length === 0 && isFetching ? (
           <ProductGridSkeleton />
         ) : accum.length === 0 && !isFetching ? (
-          <EmptyState
+          <ListingEmptyState
             surface={surface}
             query={params.get("q") ?? undefined}
             hasActiveFilters={hasActiveFilters}
@@ -118,20 +124,19 @@ export function ProductListing({ initial, forcedCategoryId, surface = "search" }
         ) : (
           <>
             <ProductGrid hits={accum} />
-            <div className="mt-6 flex justify-center">
+            <div className="mt-8 flex justify-center">
               {hasMore ? (
-                <button
-                  type="button"
+                <Button
+                  variant="outline"
                   disabled={isFetching}
                   onClick={() => {
                     if (data?.page.nextCursor) setCursor(data.page.nextCursor);
                   }}
-                  className="rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-900 hover:bg-neutral-50 disabled:opacity-60"
                 >
                   {isFetching ? "Loading…" : "Load more"}
-                </button>
+                </Button>
               ) : accum.length > 0 ? (
-                <span className="text-xs text-neutral-500">End of results</span>
+                <span className="text-xs text-text-subtle">End of results</span>
               ) : null}
             </div>
           </>
@@ -153,7 +158,7 @@ function mergeHits(prev: SearchHit[], next: SearchHit[]): SearchHit[] {
   return [...prev, ...fresh];
 }
 
-function EmptyState({
+function ListingEmptyState({
   surface,
   query,
   hasActiveFilters,
@@ -179,36 +184,36 @@ function EmptyState({
   let title: string;
   let body: string;
   if (hasActiveFilters) {
-    title = "No products match your filters.";
+    title = "No products match your filters";
     body = "Try removing some filters.";
   } else if (surface === "search") {
-    title = query
-      ? `No matches for “${query}”.`
-      : "No matches found.";
-    body = "Try different keywords or browse categories from the home page.";
+    title = query ? `No matches for “${query}”` : "No matches found";
+    body = "Try different keywords or browse categories.";
   } else {
-    title = "No products in this category yet.";
+    title = "No products in this category yet";
     body = "Check back soon, or explore other categories.";
   }
 
   return (
-    <div className="rounded-md border border-dashed border-neutral-300 p-10 text-center">
-      <p className="text-sm font-medium text-neutral-900">{title}</p>
-      <p className="mt-1 text-xs text-neutral-500">{body}</p>
-      {hasActiveFilters && (
-        <button
-          type="button"
-          onClick={clearFilters}
-          className="mt-4 rounded-md bg-neutral-900 px-4 py-2 text-xs font-medium text-white hover:bg-neutral-800"
-        >
+    <div className="rounded-lg border border-dashed border-border bg-surface p-10 text-center shadow-card">
+      <p className="text-base font-semibold text-text">{title}</p>
+      <p className="mt-1 text-sm text-text-muted">{body}</p>
+      {hasActiveFilters ? (
+        <Button onClick={clearFilters} className="mt-5">
           Clear filters
-        </button>
-      )}
+        </Button>
+      ) : null}
     </div>
   );
 }
 
-function FilterDrawer({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+function FilterDrawer({
+  children,
+  onClose,
+}: {
+  children: React.ReactNode;
+  onClose: () => void;
+}) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
@@ -222,22 +227,28 @@ function FilterDrawer({ children, onClose }: { children: React.ReactNode; onClos
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Filters">
+    <div
+      className="fixed inset-0 z-50 lg:hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Filters"
+    >
       <button
         type="button"
         aria-label="Close filters"
         onClick={onClose}
-        className="absolute inset-0 cursor-default bg-neutral-900/40"
+        className="absolute inset-0 cursor-default bg-overlay/50"
       />
-      <div className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-xl bg-white p-4 shadow-xl">
+      <div className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-2xl bg-bg p-4 shadow-elevated">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-neutral-900">Filters</h2>
+          <h2 className="text-base font-semibold text-text">Filters</h2>
           <button
             type="button"
             onClick={onClose}
-            className="text-xs font-medium text-neutral-600 hover:text-neutral-900"
+            aria-label="Close filters"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full text-text-subtle hover:bg-surface-muted hover:text-text"
           >
-            Done
+            <X className="h-4 w-4" />
           </button>
         </div>
         {children}

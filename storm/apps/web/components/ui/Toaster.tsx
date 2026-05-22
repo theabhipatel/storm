@@ -1,15 +1,37 @@
 "use client";
 
+import { AlertTriangle, CheckCircle2, Info, X, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { subscribeToasts, dismissToast, type Toast } from "../../lib/toast";
 
 const VARIANT_STYLES: Record<NonNullable<Toast["variant"]>, string> = {
-  default: "border-neutral-200 bg-white text-neutral-900",
-  success: "border-emerald-200 bg-emerald-50 text-emerald-900",
-  error: "border-red-200 bg-red-50 text-red-900",
-  warning: "border-amber-200 bg-amber-50 text-amber-900",
+  default: "border-border bg-surface text-text",
+  success: "border-success/30 bg-success-soft text-text",
+  error: "border-danger/30 bg-danger-soft text-text",
+  warning: "border-warning/30 bg-warning-soft text-text",
 };
+
+const VARIANT_ACCENT: Record<NonNullable<Toast["variant"]>, string> = {
+  default: "bg-primary",
+  success: "bg-success",
+  error: "bg-danger",
+  warning: "bg-warning",
+};
+
+function VariantIcon({ variant }: { variant: NonNullable<Toast["variant"]> }) {
+  const cls = "h-5 w-5";
+  switch (variant) {
+    case "success":
+      return <CheckCircle2 className={`${cls} text-success`} />;
+    case "error":
+      return <XCircle className={`${cls} text-danger`} />;
+    case "warning":
+      return <AlertTriangle className={`${cls} text-warning`} />;
+    default:
+      return <Info className={`${cls} text-primary`} />;
+  }
+}
 
 export function Toaster() {
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -22,22 +44,33 @@ export function Toaster() {
     <div
       role="region"
       aria-label="Notifications"
-      className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-full max-w-sm flex-col gap-2"
+      className="pointer-events-none fixed bottom-20 right-4 z-50 flex w-full max-w-sm flex-col gap-2 md:bottom-4"
     >
-      {toasts.map((t) => (
-        <button
-          key={t.id}
-          type="button"
-          onClick={() => dismissToast(t.id)}
-          role="status"
-          className={`pointer-events-auto flex w-full items-start gap-3 rounded-md border px-3 py-2.5 text-left text-sm shadow-sm transition ${
-            VARIANT_STYLES[t.variant ?? "default"]
-          }`}
-        >
-          <span className="flex-1">{t.message}</span>
-          <span aria-hidden="true" className="text-xs text-neutral-400">✕</span>
-        </button>
-      ))}
+      {toasts.map((t) => {
+        const variant = t.variant ?? "default";
+        return (
+          <div
+            key={t.id}
+            role="status"
+            className={`pointer-events-auto relative flex w-full items-start gap-3 overflow-hidden rounded-lg border px-3 py-3 pl-4 text-sm shadow-elevated ${VARIANT_STYLES[variant]}`}
+          >
+            <span
+              aria-hidden="true"
+              className={`absolute inset-y-0 left-0 w-1 ${VARIANT_ACCENT[variant]}`}
+            />
+            <VariantIcon variant={variant} />
+            <span className="flex-1 pt-0.5">{t.message}</span>
+            <button
+              type="button"
+              onClick={() => dismissToast(t.id)}
+              aria-label="Dismiss notification"
+              className="-mr-1 inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded text-text-subtle hover:bg-surface-muted hover:text-text"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 }

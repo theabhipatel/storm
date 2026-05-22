@@ -2,17 +2,90 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body { height: 100%; }
-body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
+/*
+ * Theme tokens — single source of truth.
+ * To re-skin the app, edit values below. No component changes required.
+ * HSL triplets (no hsl() wrapper) so Tailwind can compose with opacity.
+ */
+:root {
+  /* Brand */
+  --color-primary: 217 91% 50%;
+  --color-primary-hover: 217 91% 44%;
+  --color-primary-foreground: 0 0% 100%;
+  --color-primary-soft: 217 91% 96%;
+
+  /* Accent (used for "Buy now" style secondary CTA — tinted variant of primary for now) */
+  --color-accent: 38 95% 52%;
+  --color-accent-hover: 38 95% 46%;
+  --color-accent-foreground: 0 0% 100%;
+
+  /* Status */
+  --color-success: 152 69% 32%;
+  --color-success-soft: 152 60% 94%;
+  --color-success-foreground: 0 0% 100%;
+
+  --color-warning: 35 92% 50%;
+  --color-warning-soft: 38 100% 95%;
+  --color-warning-foreground: 30 50% 18%;
+
+  --color-danger: 0 72% 51%;
+  --color-danger-soft: 0 86% 96%;
+  --color-danger-foreground: 0 0% 100%;
+
+  /* Surfaces */
+  --color-bg: 220 14% 96%;
+  --color-surface: 0 0% 100%;
+  --color-surface-muted: 220 14% 98%;
+  --color-surface-strong: 220 13% 91%;
+  --color-overlay: 220 14% 10%;
+
+  /* Footer / dark surface */
+  --color-dark: 218 20% 14%;
+  --color-dark-soft: 218 18% 22%;
+  --color-dark-foreground: 220 14% 90%;
+  --color-dark-foreground-muted: 220 9% 65%;
+
+  /* Text */
+  --color-text: 222 22% 12%;
+  --color-text-muted: 220 9% 38%;
+  --color-text-subtle: 220 9% 55%;
+  --color-text-inverse: 0 0% 100%;
+
+  /* Borders / rings */
+  --color-border: 220 13% 88%;
+  --color-border-strong: 220 13% 78%;
+  --color-ring: 217 91% 50%;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background-color: hsl(var(--color-bg));
+  color: hsl(var(--color-text));
+}
 
 :focus-visible {
-  outline: 2px solid #0f172a;
+  outline: 2px solid hsl(var(--color-ring));
   outline-offset: 2px;
   border-radius: 4px;
 }
 
+/* Hide scrollbars on horizontal rails (Flipkart style) without losing scroll */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;

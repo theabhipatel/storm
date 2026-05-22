@@ -1,6 +1,8 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Mail, MailCheck } from "lucide-react";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -30,35 +32,44 @@ export default function ForgotPasswordPage() {
   if (isSuccess) {
     return (
       <AuthShell title="Check your email">
-        <p className="text-sm text-neutral-600">
-          If an account exists for that email, a reset link is on its way. The link expires in
-          30 minutes.
-        </p>
+        <div className="flex flex-col items-center gap-3 py-2 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
+            <MailCheck className="h-7 w-7" />
+          </div>
+          <p className="text-sm text-text-muted">
+            If an account exists for that email, a reset link is on its way. The link
+            expires in 30 minutes.
+          </p>
+        </div>
       </AuthShell>
     );
   }
 
   return (
-    <AuthShell title="Forgot your password?" subtitle="Enter your email and we'll send a reset link.">
+    <AuthShell
+      title="Forgot your password?"
+      subtitle="Enter your email and we'll send a reset link."
+      footer={
+        <Link href="/auth/login" className="font-semibold text-primary hover:text-primary-hover">
+          ← Back to login
+        </Link>
+      }
+    >
       <form onSubmit={onSubmit} className="space-y-4">
         <Field
           label="Email"
           type="email"
           autoComplete="email"
+          leadingIcon={<Mail className="h-4 w-4" />}
           {...register("email")}
           error={errors.email?.message}
         />
         {error ? (
           <FormError>{(error as { message?: string }).message ?? "Request failed."}</FormError>
         ) : null}
-        <Button type="submit" disabled={isLoading}>
+        <Button type="submit" disabled={isLoading} size="lg" fullWidth>
           {isLoading ? "Sending..." : "Send reset link"}
         </Button>
-        <p className="text-center text-sm text-neutral-600">
-          <a href="/auth/login" className="font-medium text-neutral-900 underline">
-            Back to login
-          </a>
-        </p>
       </form>
     </AuthShell>
   );

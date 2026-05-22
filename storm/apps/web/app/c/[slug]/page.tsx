@@ -1,3 +1,4 @@
+import { ChevronRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -26,46 +27,52 @@ export default async function CategoryPage({ params, searchParams }: PageParams)
   if (!listing) notFound();
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-      <nav className="mb-4 text-sm text-neutral-500">
-        <ol className="flex flex-wrap items-center gap-1">
-          <li>
-            <Link href="/" className="hover:underline">
-              Home
-            </Link>
-          </li>
-          {listing.breadcrumb.map((b, i) => (
-            <li key={b.id} className="flex items-center gap-1">
-              <span>/</span>
-              {i === listing.breadcrumb.length - 1 ? (
-                <span className="text-neutral-900">{b.name}</span>
-              ) : (
-                <Link href={`/c/${b.slug}`} className="hover:underline">
-                  {b.name}
+    <main className="bg-bg pb-10">
+      <div className="bg-surface shadow-sm">
+        <div className="mx-auto max-w-page px-4 py-5 sm:px-6 lg:px-8">
+          <nav aria-label="Breadcrumb" className="mb-2 text-xs text-text-muted">
+            <ol className="flex flex-wrap items-center gap-1">
+              <li>
+                <Link href="/" className="hover:text-primary">
+                  Home
                 </Link>
-              )}
-            </li>
-          ))}
-        </ol>
-      </nav>
+              </li>
+              {listing.breadcrumb.map((b, i) => (
+                <li key={b.id} className="flex items-center gap-1">
+                  <ChevronRight className="h-3 w-3 text-text-subtle" />
+                  {i === listing.breadcrumb.length - 1 ? (
+                    <span className="font-medium text-text">{b.name}</span>
+                  ) : (
+                    <Link href={`/c/${b.slug}`} className="hover:text-primary">
+                      {b.name}
+                    </Link>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </nav>
+          <h1 className="text-2xl font-bold text-text sm:text-3xl">
+            {listing.category.name}
+          </h1>
 
-      <h1 className="text-2xl font-semibold text-neutral-900">{listing.category.name}</h1>
-
-      {listing.subcategories.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {listing.subcategories.map((c) => (
-            <Link
-              key={c.id}
-              href={`/c/${c.slug}`}
-              className="rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs font-medium text-neutral-700 hover:border-neutral-300"
-            >
-              {c.name}
-            </Link>
-          ))}
+          {listing.subcategories.length > 0 ? (
+            <ul className="mt-3 flex flex-wrap gap-2">
+              {listing.subcategories.map((c) => (
+                <li key={c.id}>
+                  <Link
+                    href={`/c/${c.slug}`}
+                    className="inline-flex items-center rounded-full border border-border bg-surface px-3.5 py-1 text-xs font-medium text-text hover:border-primary hover:text-primary"
+                  >
+                    {c.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </div>
-      )}
+      </div>
 
-      <div className="mt-6">
+      <div className="mx-auto max-w-page px-4 py-6 sm:px-6 lg:px-8">
         <ProductListing
           initial={listing.results}
           forcedCategoryId={listing.category.id}

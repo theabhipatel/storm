@@ -1,5 +1,6 @@
 "use client";
 
+import { CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
 
@@ -39,7 +40,6 @@ export function ContactForm() {
     }
     setState("submitting");
     try {
-      // Stage 1: log to console; real contact endpoint is Stage 2.
       // eslint-disable-next-line no-console
       console.info("[storm-contact]", parsed.data);
       await new Promise((r) => setTimeout(r, 400));
@@ -52,39 +52,49 @@ export function ContactForm() {
 
   if (state === "sent") {
     return (
-      <div className="not-prose rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-        Thanks — we&rsquo;ve received your message and will reply within one
-        business day.
+      <div className="not-prose mt-3 flex items-start gap-3 rounded-md border border-success/30 bg-success-soft p-4 text-sm text-success">
+        <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0" />
+        <p>
+          Thanks — we&rsquo;ve received your message and will reply within one
+          business day.
+        </p>
       </div>
     );
   }
 
   return (
-    <form className="not-prose mt-2 grid gap-3" onSubmit={onSubmit} noValidate>
+    <form className="not-prose mt-3 grid gap-4" onSubmit={onSubmit} noValidate>
       <Row label="Your name" name="name" type="text" error={errors.name ?? ""} required />
       <Row label="Email" name="email" type="email" error={errors.email ?? ""} required />
-      <Row label="Mobile (10 digits)" name="phone" type="tel" error={errors.phone ?? ""} required prefix="+91" />
+      <Row
+        label="Mobile (10 digits)"
+        name="phone"
+        type="tel"
+        error={errors.phone ?? ""}
+        required
+        prefix="+91"
+      />
       <label className="block">
-        <span className="text-xs font-medium text-neutral-700">Message</span>
+        <span className="text-sm font-medium text-text">Message</span>
         <textarea
           name="message"
           rows={5}
           required
-          className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+          className="mt-1.5 block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
         />
         {errors.message ? (
-          <span className="mt-1 block text-xs text-red-600">{errors.message}</span>
+          <span className="mt-1 block text-xs text-danger">{errors.message}</span>
         ) : null}
       </label>
       <button
         type="submit"
         disabled={state === "submitting"}
-        className="inline-flex w-fit items-center rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-60"
+        className="inline-flex w-fit items-center rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary-hover disabled:opacity-60"
       >
         {state === "submitting" ? "Sending…" : "Send message"}
       </button>
       {state === "error" ? (
-        <p className="text-xs text-red-600">
+        <p className="text-xs text-danger">
           Could not send right now. Please email support@storm.example.
         </p>
       ) : null}
@@ -109,10 +119,16 @@ function Row({
 }) {
   return (
     <label className="block">
-      <span className="text-xs font-medium text-neutral-700">{label}</span>
-      <div className={prefix ? "mt-1 flex rounded-md border border-neutral-300" : "mt-1"}>
+      <span className="text-sm font-medium text-text">{label}</span>
+      <div
+        className={
+          prefix
+            ? "mt-1.5 flex overflow-hidden rounded-md border border-border bg-surface shadow-sm focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/30"
+            : "mt-1.5"
+        }
+      >
         {prefix ? (
-          <span className="select-none rounded-l-md border-r border-neutral-300 bg-neutral-50 px-3 py-2 text-sm text-neutral-600">
+          <span className="select-none border-r border-border bg-surface-muted px-3 py-2 text-sm font-medium text-text-muted">
             {prefix}
           </span>
         ) : null}
@@ -122,13 +138,13 @@ function Row({
           required={required}
           className={
             prefix
-              ? "flex-1 rounded-r-md px-3 py-2 text-sm focus:outline-none"
-              : "w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+              ? "flex-1 bg-surface px-3 py-2 text-sm focus:outline-none"
+              : "block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
           }
         />
       </div>
       {error ? (
-        <span className="mt-1 block text-xs text-red-600">{error}</span>
+        <span className="mt-1 block text-xs text-danger">{error}</span>
       ) : null}
     </label>
   );

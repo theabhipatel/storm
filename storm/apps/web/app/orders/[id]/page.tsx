@@ -26,7 +26,7 @@ export default function OrderDetailPage() {
   return (
     <AccountShell title="Order details">
       {!user || !id ? (
-        <p className="text-sm text-neutral-500">Loading…</p>
+        <p className="text-sm text-text-muted">Loading…</p>
       ) : (
         <OrderDetail orderId={id} />
       )}

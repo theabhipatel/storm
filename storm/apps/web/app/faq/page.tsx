@@ -51,14 +51,23 @@ const faqs: { q: string; a: string }[] = [
 
 export default function FaqPage() {
   return (
-    <StaticPage title="Frequently asked questions">
-      <ol>
-        {faqs.map((f) => (
-          <li key={f.q}>
-            <h3 className="mb-1 text-base font-semibold text-neutral-900">
+    <StaticPage
+      title="Frequently asked questions"
+      intro="Answers to the things people ask us most."
+    >
+      <ol className="space-y-5 list-none pl-0">
+        {faqs.map((f, i) => (
+          <li
+            key={f.q}
+            className="not-prose rounded-md border border-border bg-surface-muted p-4"
+          >
+            <h3 className="text-sm font-semibold text-text">
+              <span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground">
+                {i + 1}
+              </span>
               {f.q}
             </h3>
-            <p>{f.a}</p>
+            <p className="mt-2 text-sm text-text-muted">{f.a}</p>
           </li>
         ))}
       </ol>

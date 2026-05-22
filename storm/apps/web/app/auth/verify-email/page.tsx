@@ -1,5 +1,7 @@
 "use client";
 
+import { CheckCircle2, Loader2, XCircle } from "lucide-react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect } from "react";
 
@@ -15,52 +17,59 @@ function VerifyEmailContent() {
     if (token) void verify({ token });
   }, [token, verify]);
 
-  let title = "Verifying your email...";
-  let body: React.ReactNode = (
-    <p className="text-sm text-neutral-600">Hang tight, this takes a second.</p>
-  );
-
   if (!token) {
-    title = "Missing token";
-    body = (
-      <p className="text-sm text-neutral-600">
-        This link is incomplete. Request a new verification email from your account.
-      </p>
+    return (
+      <AuthShell title="Missing token">
+        <div className="flex items-start gap-2 rounded-md bg-danger-soft p-3 text-sm text-danger">
+          <XCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+          <p>
+            This link is incomplete. Request a new verification email from your account.
+          </p>
+        </div>
+      </AuthShell>
     );
-  } else if (isSuccess) {
-    title = "Email verified";
-    body = (
-      <>
-        <p className="text-sm text-neutral-600">
-          Your account is active. You can log in now.
-        </p>
-        <a
-          href="/auth/login"
-          className="mt-4 inline-block text-sm font-medium text-neutral-900 underline"
-        >
-          Continue to login
-        </a>
-      </>
-    );
-  } else if (error) {
-    title = "Link invalid or expired";
-    body = (
-      <p className="text-sm text-neutral-600">
-        Request a new verification link from your account, or contact support.
-      </p>
-    );
-  } else if (isLoading) {
-    title = "Verifying your email...";
   }
-
-  return <AuthShell title={title}>{body}</AuthShell>;
+  if (isSuccess) {
+    return (
+      <AuthShell title="Email verified">
+        <div className="flex flex-col items-center gap-3 py-2 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-success-soft text-success">
+            <CheckCircle2 className="h-7 w-7" />
+          </div>
+          <p className="text-sm text-text-muted">Your account is active. You can log in now.</p>
+          <Link
+            href="/auth/login"
+            className="mt-2 inline-flex items-center rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary-hover"
+          >
+            Continue to login
+          </Link>
+        </div>
+      </AuthShell>
+    );
+  }
+  if (error) {
+    return (
+      <AuthShell title="Link invalid or expired">
+        <div className="flex items-start gap-2 rounded-md bg-danger-soft p-3 text-sm text-danger">
+          <XCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+          <p>Request a new verification link from your account, or contact support.</p>
+        </div>
+      </AuthShell>
+    );
+  }
+  return (
+    <AuthShell title="Verifying your email…">
+      <p className="inline-flex items-center gap-2 text-sm text-text-muted">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        {isLoading ? "Hang tight…" : "Starting…"}
+      </p>
+    </AuthShell>
+  );
 }
 
 export default function VerifyEmailPage() {
   return (
-    <Suspense
-      fallback={<AuthShell title="Loading..."><span /></AuthShell>}
-    >
+    <Suspense fallback={<AuthShell title="Loading...">&nbsp;</AuthShell>}>
       <VerifyEmailContent />
     </Suspense>
   );

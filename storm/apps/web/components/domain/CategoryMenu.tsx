@@ -10,7 +10,7 @@ export async function CategoryMenu() {
   } catch {
     // Soft fail — keep the strip empty if catalog is unreachable.
   }
-  const topLevel = tree.filter((c) => c.parentId === null).slice(0, 8);
+  const topLevel = tree.filter((c) => c.parentId === null).slice(0, 10);
 
   if (topLevel.length === 0) {
     return null;
@@ -19,9 +19,9 @@ export async function CategoryMenu() {
   return (
     <nav
       aria-label="Categories"
-      className="hidden border-b border-neutral-200 bg-white md:block"
+      className="hidden border-b border-border bg-surface shadow-sm md:block"
     >
-      <ul className="mx-auto flex max-w-6xl items-stretch gap-1 overflow-x-auto px-4 sm:px-6 lg:px-8">
+      <ul className="no-scrollbar mx-auto flex max-w-page items-stretch gap-1 overflow-x-auto px-4 sm:px-6 lg:px-8">
         {topLevel.map((cat) => (
           <CategoryMenuItem
             key={cat.id}
@@ -29,10 +29,10 @@ export async function CategoryMenu() {
             subcategories={cat.children ?? []}
           />
         ))}
-        <li className="ml-auto py-2.5">
+        <li className="ml-auto flex items-center py-2.5">
           <Link
             href="/search"
-            className="text-xs font-medium text-neutral-500 hover:text-neutral-900"
+            className="whitespace-nowrap text-xs font-semibold uppercase tracking-wide text-primary hover:text-primary-hover"
           >
             All products →
           </Link>

@@ -1,43 +1,87 @@
 "use client";
 
+import { Heart, Star } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { SearchHit } from "@storm/contracts";
 
 import { useCurrentUser } from "../../features/auth/auth.hooks";
-import { formatINR } from "../../lib/format";
+import { Badge } from "../ui/Badge";
+import { PriceBlock } from "../ui/PriceBlock";
 import { ProductImage } from "../ui/ProductImage";
 
+interface HitWithExtras extends SearchHit {
+  mrp?: number | null;
+  rating?: number | null;
+  reviewCount?: number | null;
+}
+
 export function ProductCard({ hit }: { hit: SearchHit }) {
+  const extras = hit as HitWithExtras;
+  const hasRating =
+    typeof extras.rating === "number" && Number.isFinite(extras.rating);
+
   return (
-    <div className="group relative flex flex-col rounded-md border border-neutral-200 bg-white transition hover:shadow-md">
+    <article className="group relative flex h-full flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-card transition hover:-translate-y-0.5 hover:shadow-card-hover">
       <WishlistHeart productId={hit.productId} />
-      <Link href={`/p/${hit.slug}`} className="flex h-full flex-col p-3">
-        <div className="relative aspect-square overflow-hidden rounded bg-neutral-100">
+      <Link
+        href={`/p/${hit.slug}`}
+        className="flex h-full flex-col focus-visible:outline-none"
+      >
+        <div className="relative aspect-square overflow-hidden bg-surface-muted">
           <ProductImage
             src={hit.primaryImageUrl}
             alt={hit.name}
-            className="h-full w-full object-cover transition-transform group-hover:scale-105"
+            className="h-full w-full object-contain p-3 transition-transform duration-300 group-hover:scale-[1.03]"
           />
-          {!hit.inStock && (
-            <span className="absolute left-2 top-2 rounded bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-900">
-              Out of stock
+          {!hit.inStock ? (
+            <span className="absolute left-2 top-2 z-10">
+              <Badge variant="warning" size="sm">
+                Out of stock
+              </Badge>
             </span>
-          )}
+          ) : null}
         </div>
-        <p className="mt-2 text-xs text-neutral-500">{hit.brandName}</p>
-        <h3 className="line-clamp-2 text-sm font-medium text-neutral-900">{hit.name}</h3>
-        <div className="mt-auto pt-2 text-base font-semibold text-neutral-900">
-          {formatINR(hit.basePrice, hit.currency)}
+
+        <div className="flex flex-1 flex-col gap-1.5 p-3">
+          <p className="truncate text-[11px] font-medium uppercase tracking-wide text-text-subtle">
+            {hit.brandName}
+          </p>
+          <h3 className="line-clamp-2 min-h-[2.5em] text-sm font-medium text-text">
+            {hit.name}
+          </h3>
+          {hasRating ? (
+            <div className="flex items-center gap-1.5">
+              <Badge variant="success" size="sm" leadingIcon={<Star className="h-3 w-3 fill-current" />}>
+                {(extras.rating ?? 0).toFixed(1)}
+              </Badge>
+              {typeof extras.reviewCount === "number" ? (
+                <span className="text-[11px] font-medium text-text-subtle">
+                  ({formatCount(extras.reviewCount)})
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+          <div className="mt-auto pt-1.5">
+            <PriceBlock
+              price={hit.basePrice}
+              mrp={extras.mrp ?? undefined}
+              currency={hit.currency}
+              size="md"
+            />
+          </div>
         </div>
       </Link>
-    </div>
+    </article>
   );
 }
 
-// Anonymous users → redirected to login (plan §Product card).
-// Authed users → wishlist wiring lands on Day 6; for now it's a no-op
-// placeholder so the icon is visible across the catalog.
+function formatCount(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return String(n);
+}
+
 function WishlistHeart({ productId }: { productId: string }) {
   const user = useCurrentUser();
   const router = useRouter();
@@ -49,7 +93,6 @@ function WishlistHeart({ productId }: { productId: string }) {
       const next = `/p/${encodeURIComponent(productId)}`;
       router.push(`/auth/login?next=${encodeURIComponent(next)}`);
     }
-    // Authed: wishlist endpoints arrive on Day 6.
   }
 
   return (
@@ -57,28 +100,17 @@ function WishlistHeart({ productId }: { productId: string }) {
       type="button"
       onClick={onClick}
       aria-label="Add to wishlist"
-      title={user ? "Wishlist (coming Day 6)" : "Log in to save"}
-      className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-neutral-500 shadow-sm transition hover:text-rose-600"
+      title={user ? "Wishlist (coming soon)" : "Log in to save"}
+      className="absolute right-2 top-2 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full bg-surface/95 text-text-subtle opacity-0 shadow-card backdrop-blur transition group-hover:opacity-100 hover:text-danger focus-visible:opacity-100"
     >
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-4 w-4"
-        aria-hidden="true"
-      >
-        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-      </svg>
+      <Heart className="h-4 w-4" />
     </button>
   );
 }
 
 export function ProductGrid({ hits }: { hits: SearchHit[] }) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
       {hits.map((h) => (
         <ProductCard key={h.productId} hit={h} />
       ))}

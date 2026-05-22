@@ -1,8 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 
-import { Button } from "./Field";
+import { Button } from "./Button";
 
 export function ConfirmDialog({
   open,
@@ -27,30 +27,45 @@ export function ConfirmDialog({
   onCancel: () => void;
   children?: ReactNode;
 }) {
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onCancel();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onCancel]);
+
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="w-full max-w-md rounded-lg bg-white p-5 shadow-xl">
-        <h2 className="text-lg font-semibold text-neutral-900">{title}</h2>
-        {message ? <p className="mt-2 text-sm text-neutral-600">{message}</p> : null}
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-dialog-title"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-overlay/60 px-4"
+      onClick={onCancel}
+    >
+      <div
+        className="w-full max-w-md rounded-xl bg-surface p-6 shadow-elevated"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 id="confirm-dialog-title" className="text-lg font-semibold text-text">
+          {title}
+        </h2>
+        {message ? <p className="mt-2 text-sm text-text-muted">{message}</p> : null}
         {children ? <div className="mt-4">{children}</div> : null}
-        <div className="mt-5 flex gap-2">
-          <Button variant="outline" onClick={onCancel}>
+        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variant="outline" onClick={onCancel} fullWidth>
             {cancelLabel}
           </Button>
-          <button
-            type="button"
-            onClick={onConfirm}
+          <Button
+            variant={variant === "danger" ? "danger" : "primary"}
             disabled={disabled}
-            className={
-              "w-full rounded-md px-4 py-2 text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed " +
-              (variant === "danger"
-                ? "bg-red-600 text-white hover:bg-red-500"
-                : "bg-neutral-900 text-white hover:bg-neutral-800")
-            }
+            onClick={onConfirm}
+            fullWidth
           >
             {confirmLabel}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

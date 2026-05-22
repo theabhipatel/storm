@@ -1,10 +1,13 @@
 "use client";
 
+import { Heart, ShoppingCart, Trash2 } from "lucide-react";
 import Link from "next/link";
 
 import { EmptyState } from "../../components/domain/EmptyState";
+import { Button } from "../../components/ui/Button";
+import { PriceBlock } from "../../components/ui/PriceBlock";
+import { ProductImage } from "../../components/ui/ProductImage";
 import { ProductGridSkeleton } from "../../components/ui/Skeletons";
-import { formatINR } from "../../lib/format";
 import { toast } from "../../lib/toast";
 import {
   useGetWishlistQuery,
@@ -27,62 +30,76 @@ export function WishlistView() {
         description="Save items you love and find them here later."
         ctaLabel="Browse products"
         ctaHref="/"
+        icon={<Heart className="h-8 w-8" />}
       />
     );
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
       {data.items.map((item) => (
         <article
           key={item.sku}
-          className="flex flex-col gap-3 rounded-md border border-neutral-200 bg-white p-4"
+          className="group flex flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-card transition hover:-translate-y-0.5 hover:shadow-card-hover"
         >
-          <div className="h-40 w-full overflow-hidden rounded bg-neutral-100" />
-          <div>
+          <Link href={`/p/${item.slug}`} className="block">
+            <div className="aspect-square overflow-hidden bg-surface-muted">
+              <ProductImage
+                src={null}
+                alt={item.name}
+                className="h-full w-full object-contain p-3 transition-transform group-hover:scale-[1.03]"
+              />
+            </div>
+          </Link>
+          <div className="flex flex-1 flex-col gap-2 p-3">
             <Link
               href={`/p/${item.slug}`}
-              className="font-medium text-neutral-900 hover:underline"
+              className="line-clamp-2 min-h-[2.5em] text-sm font-medium text-text hover:text-primary"
             >
               {item.name}
             </Link>
-            <p className="mt-1 text-sm text-neutral-700">
-              {formatINR(item.currentPrice, item.currency)}
-            </p>
-            {!item.available && (
-              <p className="mt-1 text-xs text-red-600">Out of stock</p>
-            )}
-          </div>
-          <div className="mt-auto flex gap-2">
-            <button
-              type="button"
-              disabled={!item.available}
-              onClick={async () => {
-                try {
-                  await moveToCart({ sku: item.sku }).unwrap();
-                  toast.success("Moved to cart");
-                } catch {
-                  toast.error("Could not move to cart");
-                }
-              }}
-              className="flex-1 rounded-md bg-neutral-900 px-3 py-2 text-xs font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Move to cart
-            </button>
-            <button
-              type="button"
-              onClick={async () => {
-                try {
-                  await removeItem({ sku: item.sku }).unwrap();
-                  toast.show("Removed from wishlist");
-                } catch {
-                  toast.error("Could not remove");
-                }
-              }}
-              className="rounded-md border border-neutral-300 px-3 py-2 text-xs text-neutral-700 hover:bg-neutral-50"
-            >
-              Remove
-            </button>
+            <PriceBlock
+              price={item.currentPrice}
+              currency={item.currency}
+              size="sm"
+            />
+            {!item.available ? (
+              <p className="text-[11px] font-semibold text-danger">Out of stock</p>
+            ) : null}
+            <div className="mt-auto flex gap-2 pt-1">
+              <Button
+                variant="primary"
+                size="sm"
+                fullWidth
+                leadingIcon={<ShoppingCart className="h-3.5 w-3.5" />}
+                disabled={!item.available}
+                onClick={async () => {
+                  try {
+                    await moveToCart({ sku: item.sku }).unwrap();
+                    toast.success("Moved to cart");
+                  } catch {
+                    toast.error("Could not move to cart");
+                  }
+                }}
+              >
+                Cart
+              </Button>
+              <button
+                type="button"
+                aria-label="Remove from wishlist"
+                onClick={async () => {
+                  try {
+                    await removeItem({ sku: item.sku }).unwrap();
+                    toast.show("Removed from wishlist");
+                  } catch {
+                    toast.error("Could not remove");
+                  }
+                }}
+                className="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md border border-border text-text-subtle transition hover:border-danger/40 hover:text-danger"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
         </article>
       ))}

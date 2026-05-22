@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -23,22 +24,25 @@ export function CategoryMenuItem({
     >
       <Link
         href={`/c/${node.slug}`}
-        className="flex h-full items-center px-3 py-2.5 text-sm font-medium text-neutral-700 hover:text-neutral-900"
+        className="flex h-full items-center gap-1 whitespace-nowrap px-3 py-3 text-sm font-medium text-text hover:text-primary"
         aria-haspopup={hasSubs}
         aria-expanded={hasSubs ? open : undefined}
         onFocus={() => hasSubs && setOpen(true)}
         onBlur={() => setOpen(false)}
       >
         {node.name}
+        {hasSubs ? (
+          <ChevronDown className="h-3.5 w-3.5 text-text-subtle" />
+        ) : null}
       </Link>
       {hasSubs && open ? (
-        <div className="absolute left-0 top-full z-30 min-w-[220px] rounded-md border border-neutral-200 bg-white p-2 shadow-lg">
-          <ul className="grid grid-cols-1 gap-1">
+        <div className="absolute left-0 top-full z-30 min-w-[240px] rounded-md border border-border bg-surface p-2 shadow-elevated">
+          <ul className="grid grid-cols-1 gap-0.5">
             {subcategories.map((sc) => (
               <li key={sc.id}>
                 <Link
                   href={`/c/${sc.slug}`}
-                  className="block rounded px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900"
+                  className="block rounded px-3 py-2 text-sm text-text hover:bg-primary-soft hover:text-primary"
                 >
                   {sc.name}
                 </Link>

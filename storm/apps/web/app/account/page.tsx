@@ -1,35 +1,54 @@
 "use client";
 
+import { Check, ChevronRight, ShieldAlert } from "lucide-react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import { AccountShell } from "../../components/domain/AccountShell";
+import { Badge } from "../../components/ui/Badge";
 import { useMeProfileQuery } from "../../features/account/account.api";
 
 export default function AccountOverviewPage() {
   const { data, isLoading } = useMeProfileQuery();
 
   return (
-    <AccountShell title="Account">
+    <AccountShell title="Account overview">
       {isLoading || !data ? (
-        <p className="text-sm text-neutral-500">Loading…</p>
+        <p className="text-sm text-text-muted">Loading…</p>
       ) : (
-        <div className="space-y-6">
-          <DataRow label="Name" value={data.user.name} />
+        <div className="divide-y divide-border">
+          <DataRow label="Name" value={data.user.name} link={{ href: "/account/profile", label: "Edit" }} />
           <DataRow
             label="Email"
             value={data.user.email}
-            badge={data.user.emailVerified ? "verified" : "unverified"}
+            badge={
+              data.user.emailVerified ? (
+                <Badge variant="success" size="sm" leadingIcon={<Check className="h-3 w-3" />}>
+                  Verified
+                </Badge>
+              ) : (
+                <Badge variant="warning" size="sm" leadingIcon={<ShieldAlert className="h-3 w-3" />}>
+                  Unverified
+                </Badge>
+              )
+            }
             link={{ href: "/account/profile", label: "Change" }}
           />
           <DataRow
             label="Mobile"
             value={data.user.mobile ? `+91 ${data.user.mobile}` : "Not set"}
             badge={
-              data.user.mobile
-                ? data.user.mobileVerified
-                  ? "verified"
-                  : "unverified"
-                : undefined
+              data.user.mobile ? (
+                data.user.mobileVerified ? (
+                  <Badge variant="success" size="sm" leadingIcon={<Check className="h-3 w-3" />}>
+                    Verified
+                  </Badge>
+                ) : (
+                  <Badge variant="warning" size="sm">
+                    Unverified
+                  </Badge>
+                )
+              ) : null
             }
             link={{ href: "/account/profile", label: "Change" }}
           />
@@ -42,9 +61,11 @@ export default function AccountOverviewPage() {
             }
             link={{ href: "/account/addresses", label: "Manage" }}
           />
-          <p className="text-xs text-neutral-500">
-            Member since {new Date(data.user.createdAt).toLocaleDateString("en-IN")}
-          </p>
+          <div className="pt-4">
+            <p className="text-xs text-text-subtle">
+              Member since {new Date(data.user.createdAt).toLocaleDateString("en-IN")}
+            </p>
+          </div>
         </div>
       )}
     </AccountShell>
@@ -59,32 +80,27 @@ function DataRow({
 }: {
   label: string;
   value: string;
-  badge?: "verified" | "unverified" | undefined;
+  badge?: ReactNode;
   link?: { href: string; label: string } | undefined;
 }) {
   return (
-    <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
-      <div>
-        <p className="text-xs uppercase tracking-wide text-neutral-500">{label}</p>
-        <div className="mt-0.5 flex items-center gap-2">
-          <p className="text-sm text-neutral-900">{value}</p>
-          {badge ? (
-            <span
-              className={
-                "rounded-full px-2 py-0.5 text-xs font-medium " +
-                (badge === "verified"
-                  ? "bg-emerald-100 text-emerald-700"
-                  : "bg-amber-100 text-amber-700")
-              }
-            >
-              {badge}
-            </span>
-          ) : null}
+    <div className="flex items-center justify-between gap-4 py-4">
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-semibold uppercase tracking-wide text-text-subtle">
+          {label}
+        </p>
+        <div className="mt-1 flex flex-wrap items-center gap-2">
+          <p className="break-words text-sm text-text">{value}</p>
+          {badge}
         </div>
       </div>
       {link ? (
-        <Link href={link.href} className="text-sm text-neutral-700 underline-offset-2 hover:underline">
+        <Link
+          href={link.href}
+          className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary-hover"
+        >
           {link.label}
+          <ChevronRight className="h-3.5 w-3.5" />
         </Link>
       ) : null}
     </div>

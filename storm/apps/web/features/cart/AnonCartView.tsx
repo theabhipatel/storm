@@ -1,8 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Minus, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
+import { EmptyState } from "../../components/domain/EmptyState";
+import { Card, CardHeader } from "../../components/ui/Card";
+import { ProductImage } from "../../components/ui/ProductImage";
 import { formatINR } from "../../lib/format";
 import { PopularRecsWidget } from "../recs/PopularRecsWidget";
 import { anonCart, type AnonCartItem } from "./anonCart";
@@ -16,124 +20,134 @@ export function AnonCartView() {
   }, []);
 
   if (items.length === 0) {
-    return <EmptyCart />;
+    return (
+      <div className="space-y-10">
+        <EmptyState
+          title="Your cart is empty"
+          description="Add items to get started — log in any time to save them."
+          ctaLabel="Browse products"
+          ctaHref="/"
+        />
+        <PopularRecsWidget />
+      </div>
+    );
   }
   const subtotal = items.reduce((acc, i) => acc + i.basePrice * i.qty, 0);
+  const itemCount = items.reduce((a, i) => a + i.qty, 0);
 
   return (
-    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px]">
+    <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_360px]">
       <div className="space-y-3">
         {items.map((item) => (
-          <article
-            key={`${item.productId}:${item.variantId ?? "_"}`}
-            className="flex gap-4 rounded-md border border-neutral-200 bg-white p-4"
-          >
-            <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded bg-neutral-100">
-              {item.primaryImageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={item.primaryImageUrl}
-                  alt=""
-                  className="h-full w-full object-cover"
-                />
-              ) : null}
-            </div>
-            <div className="flex-1">
+          <Card key={`${item.productId}:${item.variantId ?? "_"}`} padding="md">
+            <div className="flex flex-col gap-4 sm:flex-row">
               <Link
                 href={`/p/${item.slug}`}
-                className="font-medium text-neutral-900 hover:underline"
+                className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-border bg-surface-muted"
               >
-                {item.name}
-              </Link>
-              <p className="mt-1 text-sm text-neutral-500">
-                {formatINR(item.basePrice, "INR")}
-              </p>
-              <div className="mt-2 flex items-center gap-3">
-                <QtyStepper
-                  qty={item.qty}
-                  onChange={(next) =>
-                    setItems(
-                      anonCart.updateQty(item.productId, item.variantId, next).items,
-                    )
-                  }
+                <ProductImage
+                  src={item.primaryImageUrl}
+                  alt={item.name}
+                  className="h-full w-full object-contain p-1"
                 />
-                <button
-                  type="button"
-                  onClick={() =>
-                    setItems(anonCart.remove(item.productId, item.variantId).items)
-                  }
-                  className="text-xs text-neutral-500 hover:text-red-600"
+              </Link>
+              <div className="flex-1">
+                <Link
+                  href={`/p/${item.slug}`}
+                  className="block text-sm font-semibold text-text hover:text-primary"
                 >
-                  Remove
-                </button>
+                  {item.name}
+                </Link>
+                <p className="mt-1 text-sm font-semibold text-text">
+                  {formatINR(item.basePrice, "INR")}
+                </p>
+                <div className="mt-3 flex items-center gap-2">
+                  <QtyStepper
+                    qty={item.qty}
+                    onChange={(next) =>
+                      setItems(
+                        anonCart.updateQty(item.productId, item.variantId, next).items,
+                      )
+                    }
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setItems(anonCart.remove(item.productId, item.variantId).items)
+                    }
+                    className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold text-text-muted transition hover:text-danger"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Remove
+                  </button>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-base font-bold text-text">
+                  {formatINR(item.basePrice * item.qty, "INR")}
+                </p>
               </div>
             </div>
-            <div className="flex flex-col items-end justify-between">
-              <span className="text-sm font-semibold text-neutral-900">
-                {formatINR(item.basePrice * item.qty, "INR")}
-              </span>
-            </div>
-          </article>
+          </Card>
         ))}
       </div>
-      <aside className="h-fit rounded-md border border-neutral-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-neutral-900">Order summary</h2>
-        <dl className="mt-3 space-y-1.5 text-sm">
-          <div className="flex justify-between">
-            <dt className="text-neutral-600">Items ({items.reduce((a, i) => a + i.qty, 0)})</dt>
-            <dd className="text-neutral-900">{formatINR(subtotal, "INR")}</dd>
+      <aside className="lg:sticky lg:top-24 lg:self-start">
+        <Card padding="lg">
+          <CardHeader title="Price details" description={`${itemCount} item${itemCount === 1 ? "" : "s"}`} />
+          <dl className="space-y-3 text-sm">
+            <div className="flex justify-between">
+              <dt className="text-text-muted">Total MRP</dt>
+              <dd className="text-text">{formatINR(subtotal, "INR")}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-text-muted">Delivery charges</dt>
+              <dd className="font-semibold text-success">FREE</dd>
+            </div>
+            <div className="flex justify-between border-t border-dashed border-border pt-3 text-base font-bold">
+              <dt className="text-text">Total amount</dt>
+              <dd className="text-text">{formatINR(subtotal, "INR")}</dd>
+            </div>
+          </dl>
+          <div className="mt-4 rounded-md border border-warning/30 bg-warning-soft px-3 py-2 text-xs font-semibold text-warning-foreground">
+            Log in to verify availability and proceed to checkout.
           </div>
-        </dl>
-        <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-          Log in to verify availability and proceed to checkout.
-        </p>
-        <Link
-          href="/auth/login?returnTo=/cart"
-          className="mt-3 block w-full rounded-md bg-neutral-900 px-4 py-2 text-center text-sm font-semibold text-white hover:bg-neutral-800"
-        >
-          Log in to checkout
-        </Link>
+          <Link
+            href="/auth/login?returnTo=/cart"
+            className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-md bg-accent px-6 text-base font-semibold text-accent-foreground shadow-sm transition hover:bg-accent-hover"
+          >
+            Log in to checkout
+          </Link>
+          <p className="mt-4 inline-flex items-center gap-2 text-xs text-text-muted">
+            <ShieldCheck className="h-4 w-4 text-success" />
+            Safe & secure payments
+          </p>
+        </Card>
       </aside>
-    </div>
-  );
-}
-
-function EmptyCart() {
-  return (
-    <div className="space-y-8">
-      <div className="rounded-md border border-dashed border-neutral-300 p-10 text-center">
-        <p className="text-neutral-700">Your cart is empty.</p>
-        <Link
-          href="/"
-          className="mt-3 inline-block rounded-md bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
-        >
-          Browse products
-        </Link>
-      </div>
-      <PopularRecsWidget />
     </div>
   );
 }
 
 function QtyStepper(props: { qty: number; onChange: (q: number) => void }) {
   return (
-    <div className="inline-flex items-center rounded-md border border-neutral-300">
+    <div className="inline-flex h-9 items-center rounded-md border border-border bg-surface">
       <button
         type="button"
         aria-label="Decrease quantity"
         onClick={() => props.onChange(Math.max(1, props.qty - 1))}
-        className="px-2 py-1 text-neutral-700 hover:bg-neutral-50"
+        className="inline-flex h-full w-9 items-center justify-center text-text hover:bg-surface-muted disabled:opacity-40"
+        disabled={props.qty <= 1}
       >
-        −
+        <Minus className="h-4 w-4" />
       </button>
-      <span className="min-w-[28px] text-center text-sm">{props.qty}</span>
+      <span className="w-9 text-center text-sm font-semibold text-text">{props.qty}</span>
       <button
         type="button"
         aria-label="Increase quantity"
         onClick={() => props.onChange(Math.min(10, props.qty + 1))}
-        className="px-2 py-1 text-neutral-700 hover:bg-neutral-50"
+        className="inline-flex h-full w-9 items-center justify-center text-text hover:bg-surface-muted disabled:opacity-40"
+        disabled={props.qty >= 10}
       >
-        +
+        <Plus className="h-4 w-4" />
       </button>
     </div>
   );

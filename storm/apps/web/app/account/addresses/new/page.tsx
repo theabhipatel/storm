@@ -11,7 +11,7 @@ export default function NewAddressPage() {
   const [createAddress, { isLoading, error }] = useCreateAddressMutation();
 
   return (
-    <AccountShell title="Add address">
+    <AccountShell title="Add a new address">
       <AddressForm
         submitLabel="Save address"
         submittingLabel="Saving…"

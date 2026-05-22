@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AccountDeleteSchema } from "@storm/contracts";
+import { AlertTriangle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 
@@ -25,9 +26,12 @@ export default function DeleteAccountPage() {
 
   return (
     <AccountShell title="Delete account">
-      <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-        This will permanently delete your Storm account, sign you out everywhere, and
-        anonymize your personal data. This cannot be undone.
+      <div className="flex items-start gap-3 rounded-md border border-danger/30 bg-danger-soft p-4 text-sm text-danger">
+        <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0" />
+        <p>
+          This will permanently delete your Storm account, sign you out everywhere, and
+          anonymize your personal data. <strong>This cannot be undone.</strong>
+        </p>
       </div>
 
       <form
@@ -48,12 +52,16 @@ export default function DeleteAccountPage() {
           {...register("currentPassword")}
           error={errors.currentPassword?.message}
         />
-        <label className="flex items-start gap-2 text-sm text-neutral-700">
-          <input type="checkbox" className="mt-0.5" {...register("confirm")} />
+        <label className="flex items-start gap-2 text-sm text-text">
+          <input
+            type="checkbox"
+            className="mt-0.5 h-4 w-4 rounded border-border accent-danger"
+            {...register("confirm")}
+          />
           <span>I understand this is permanent.</span>
         </label>
         {errors.confirm ? (
-          <p className="text-xs text-red-600">You must check the box to continue.</p>
+          <p className="text-xs text-danger">You must check the box to continue.</p>
         ) : null}
         {error ? (
           <FormError>
@@ -62,7 +70,7 @@ export default function DeleteAccountPage() {
               : (error as { message?: string }).message ?? "Could not delete account."}
           </FormError>
         ) : null}
-        <Button type="submit" disabled={isLoading}>
+        <Button type="submit" disabled={isLoading} variant="danger" fullWidth>
           {isLoading ? "Deleting…" : "Delete my account"}
         </Button>
       </form>

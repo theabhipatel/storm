@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 interface ProductImageProps {
-  src?: string | null;
+  src?: string | null | undefined;
   alt: string;
   className?: string;
   sizes?: string;
@@ -11,7 +11,7 @@ interface ProductImageProps {
 }
 
 const PLACEHOLDER =
-  "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' fill='%23f1f5f9'/%3E%3Cpath d='M20 56 L36 38 L46 50 L60 32 L62 56 Z' fill='%23cbd5e1'/%3E%3Ccircle cx='30' cy='28' r='6' fill='%23cbd5e1'/%3E%3C/svg%3E";
+  "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' fill='%23f1f5f9'/%3E%3Cpath d='M20 56 L36 38 L46 50 L60 32 L62 56 Z' fill='%2394a3b8'/%3E%3Ccircle cx='30' cy='28' r='6' fill='%2394a3b8'/%3E%3C/svg%3E";
 
 export function ProductImage({
   src,

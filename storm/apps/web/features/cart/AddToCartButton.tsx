@@ -1,12 +1,15 @@
 "use client";
 
+import { Heart, Minus, Plus, ShoppingCart, Zap } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { Button } from "../../components/ui/Button";
 import { toast } from "../../lib/toast";
 import { useCurrentUser } from "../auth/auth.hooks";
-import { useAddCartItemMutation } from "./cart.api";
 import { useAddWishlistItemMutation } from "../wishlist/wishlist.api";
 import { anonCart } from "./anonCart";
+import { useAddCartItemMutation } from "./cart.api";
 
 export interface AddToCartButtonProps {
   productId: string;
@@ -21,6 +24,7 @@ export interface AddToCartButtonProps {
 }
 
 export function AddToCartButton(props: AddToCartButtonProps) {
+  const router = useRouter();
   const user = useCurrentUser();
   const [addCartItem, { isLoading: addingToCart }] = useAddCartItemMutation();
   const [addWishlistItem] = useAddWishlistItemMutation();
@@ -28,7 +32,7 @@ export function AddToCartButton(props: AddToCartButtonProps) {
 
   const inStock = props.inStock ?? true;
 
-  async function handleAddToCart(): Promise<void> {
+  async function performAdd(): Promise<boolean> {
     if (user) {
       try {
         await addCartItem({
@@ -36,9 +40,10 @@ export function AddToCartButton(props: AddToCartButtonProps) {
           ...(props.variantId !== undefined ? { variantId: props.variantId } : {}),
           qty,
         }).unwrap();
-        toast.success("Added to cart");
+        return true;
       } catch {
         toast.error("Could not add to cart");
+        return false;
       }
     } else {
       anonCart.addItem({
@@ -54,8 +59,18 @@ export function AddToCartButton(props: AddToCartButtonProps) {
         basePrice: props.basePrice,
         currency: "INR",
       });
-      toast.success("Added to cart");
+      return true;
     }
+  }
+
+  async function handleAddToCart(): Promise<void> {
+    const ok = await performAdd();
+    if (ok) toast.success("Added to cart");
+  }
+
+  async function handleBuyNow(): Promise<void> {
+    const ok = await performAdd();
+    if (ok) router.push("/cart");
   }
 
   async function handleAddToWishlist(): Promise<void> {
@@ -72,44 +87,62 @@ export function AddToCartButton(props: AddToCartButtonProps) {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <label htmlFor="qty" className="text-sm text-neutral-700">
-          Qty
-        </label>
-        <select
-          id="qty"
-          value={qty}
-          onChange={(e) => setQty(Number(e.target.value))}
-          disabled={!inStock}
-          className="rounded-md border border-neutral-300 px-2 py-1 text-sm disabled:opacity-50"
-        >
-          {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-            <option key={n} value={n}>
-              {n}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={handleAddToCart}
-          disabled={!inStock || addingToCart}
-          className="flex-1 rounded-md bg-neutral-900 px-4 py-3 text-sm font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
-          title={inStock ? "Add to cart" : "Out of stock"}
-        >
-          {inStock ? "Add to cart" : "Notify when back (Stage 2)"}
-        </button>
+        <span className="text-sm font-medium text-text">Qty</span>
+        <div className="inline-flex h-10 items-center rounded-md border border-border bg-surface">
+          <button
+            type="button"
+            aria-label="Decrease quantity"
+            onClick={() => setQty((n) => Math.max(1, n - 1))}
+            disabled={!inStock || qty <= 1}
+            className="inline-flex h-full w-9 items-center justify-center text-text hover:bg-surface-muted disabled:opacity-40"
+          >
+            <Minus className="h-4 w-4" />
+          </button>
+          <span className="w-10 text-center text-sm font-semibold text-text">
+            {qty}
+          </span>
+          <button
+            type="button"
+            aria-label="Increase quantity"
+            onClick={() => setQty((n) => Math.min(10, n + 1))}
+            disabled={!inStock || qty >= 10}
+            className="inline-flex h-full w-9 items-center justify-center text-text hover:bg-surface-muted disabled:opacity-40"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+        </div>
         <button
           type="button"
           onClick={handleAddToWishlist}
           aria-label="Add to wishlist"
-          title="Add to wishlist"
-          className="rounded-md border border-neutral-300 px-4 py-3 text-sm hover:bg-neutral-50"
+          className="ml-auto inline-flex h-10 w-10 items-center justify-center rounded-md border border-border text-text-subtle transition hover:border-danger/40 hover:text-danger"
         >
-          ♥
+          <Heart className="h-4 w-4" />
         </button>
+      </div>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <Button
+          variant="primary"
+          size="lg"
+          onClick={handleAddToCart}
+          disabled={!inStock || addingToCart}
+          leadingIcon={<ShoppingCart className="h-4 w-4" />}
+          fullWidth
+        >
+          {inStock ? "Add to cart" : "Out of stock"}
+        </Button>
+        <Button
+          variant="accent"
+          size="lg"
+          onClick={handleBuyNow}
+          disabled={!inStock || addingToCart}
+          leadingIcon={<Zap className="h-4 w-4" />}
+          fullWidth
+        >
+          Buy now
+        </Button>
       </div>
     </div>
   );

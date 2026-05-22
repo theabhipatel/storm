@@ -1,5 +1,6 @@
 "use client";
 
+import { Plus } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -28,23 +29,26 @@ export default function AddressesPage() {
       : null;
 
   return (
-    <AccountShell title="Addresses">
+    <AccountShell title="Saved addresses">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-neutral-600">{addresses.length} of 10 saved</p>
+        <p className="text-sm text-text-muted">{addresses.length} of 10 saved</p>
         <Link
           href="/account/addresses/new"
-          className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800"
+          className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary-hover"
         >
+          <Plus className="h-4 w-4" />
           Add new
         </Link>
       </div>
 
       {isLoading ? (
-        <p className="mt-4 text-sm text-neutral-500">Loading…</p>
+        <p className="mt-6 text-sm text-text-muted">Loading…</p>
       ) : addresses.length === 0 ? (
-        <p className="mt-4 text-sm text-neutral-500">No addresses yet.</p>
+        <p className="mt-6 rounded-lg border border-dashed border-border bg-surface-muted p-6 text-center text-sm text-text-muted">
+          No addresses yet.
+        </p>
       ) : (
-        <ul className="mt-4 space-y-3">
+        <ul className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
           {addresses.map((a) => (
             <li key={a.id}>
               <AddressCard
@@ -99,8 +103,11 @@ export default function AddressesPage() {
         ) : null}
       </ConfirmDialog>
 
-      <div className="mt-6 flex justify-end">
-        <Link href="/account" className="text-sm text-neutral-700 underline-offset-2 hover:underline">
+      <div className="mt-8 flex justify-end">
+        <Link
+          href="/account"
+          className="text-sm font-semibold text-primary hover:text-primary-hover"
+        >
           ← Back to overview
         </Link>
       </div>
