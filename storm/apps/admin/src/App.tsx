@@ -1,3 +1,4 @@
+import { Loader2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
@@ -25,8 +26,9 @@ function RequireAdmin({ children }: { children: ReactNode }) {
   const user = useCurrentUser();
   if (!bootstrapped) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-neutral-100 text-sm text-neutral-600">
-        Loading session...
+      <main className="flex min-h-screen items-center justify-center bg-bg text-sm text-text-muted">
+        <Loader2 className="mr-2 h-4 w-4 animate-spin text-primary" aria-hidden />
+        Loading session…
       </main>
     );
   }

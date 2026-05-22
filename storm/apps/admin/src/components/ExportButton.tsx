@@ -1,12 +1,14 @@
+import { Download, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import { ADMIN_BFF_BASE_URL } from "../lib/serviceApi";
 import {
+  useLazyGetExportStatusQuery,
   useStartOrdersExportMutation,
   useStartUsersExportMutation,
-  useLazyGetExportStatusQuery,
   type ExportRecord,
 } from "../features/exports/exports.api";
+import { ADMIN_BFF_BASE_URL } from "../lib/serviceApi";
+import { Button } from "./ui/Button";
 
 interface ExportButtonProps {
   kind: "orders" | "users";
@@ -57,14 +59,21 @@ export function ExportButton({ kind, filters, label }: ExportButtonProps) {
 
   return (
     <div className="flex flex-col items-end gap-2 text-xs">
-      <button
-        type="button"
+      <Button
+        variant="outline"
+        size="sm"
         onClick={() => void trigger()}
         disabled={busy}
-        className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-800 hover:bg-neutral-50 disabled:opacity-50"
+        leadingIcon={
+          busy ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+          ) : (
+            <Download className="h-3.5 w-3.5" aria-hidden />
+          )
+        }
       >
-        {busy ? "Starting…" : label ?? `Export ${kind} (CSV)`}
-      </button>
+        {busy ? "Starting…" : (label ?? `Export ${kind} (CSV)`)}
+      </Button>
       {current ? <ExportStatusPill record={current} /> : null}
     </div>
   );
@@ -77,7 +86,7 @@ function ExportStatusPill({ record }: { record: ExportRecord }) {
         href={`${ADMIN_BFF_BASE_URL}${record.downloadUrl ?? ""}`}
         target="_blank"
         rel="noreferrer"
-        className="rounded-full bg-emerald-100 px-2 py-1 font-medium text-emerald-900"
+        className="rounded-full bg-success-soft px-2 py-1 font-medium text-success"
       >
         Download {record.filename} ({record.rowCount ?? 0} rows)
       </a>
@@ -85,13 +94,13 @@ function ExportStatusPill({ record }: { record: ExportRecord }) {
   }
   if (record.status === "failed") {
     return (
-      <span className="rounded-full bg-red-100 px-2 py-1 font-medium text-red-900">
+      <span className="rounded-full bg-danger-soft px-2 py-1 font-medium text-danger">
         Failed: {record.errorMessage ?? "unknown error"}
       </span>
     );
   }
   return (
-    <span className="rounded-full bg-neutral-100 px-2 py-1 text-neutral-700">
+    <span className="rounded-full bg-surface-strong px-2 py-1 text-text-muted">
       {record.status}…
     </span>
   );

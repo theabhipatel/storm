@@ -57,10 +57,12 @@ export function AttributeEditor({
     });
   }
 
+  const inputCls =
+    "rounded-md border border-border bg-surface px-3 py-1.5 text-sm shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30";
   return (
     <div className="space-y-2">
       {rows.length === 0 && (
-        <p className="text-sm text-neutral-500">No attributes yet.</p>
+        <p className="text-sm text-text-subtle">No attributes yet.</p>
       )}
       {rows.map((r) => (
         <div key={r.id} className="flex flex-wrap items-center gap-2">
@@ -68,14 +70,14 @@ export function AttributeEditor({
             value={r.key}
             placeholder="key (e.g. ram)"
             onChange={(e) => update(r.id, { key: e.target.value })}
-            className="w-40 rounded-md border border-neutral-300 px-3 py-1.5 text-sm"
+            className={`w-40 ${inputCls}`}
           />
           <select
             value={r.type}
             onChange={(e) =>
               update(r.id, { type: e.target.value as Row["type"], value: "" })
             }
-            className="w-28 rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
+            className={`w-28 ${inputCls}`}
           >
             <option value="string">string</option>
             <option value="number">number</option>
@@ -85,7 +87,7 @@ export function AttributeEditor({
             <select
               value={r.value}
               onChange={(e) => update(r.id, { value: e.target.value })}
-              className="w-28 rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
+              className={`w-28 ${inputCls}`}
             >
               <option value="">--</option>
               <option value="true">true</option>
@@ -97,13 +99,13 @@ export function AttributeEditor({
               value={r.value}
               placeholder="value"
               onChange={(e) => update(r.id, { value: e.target.value })}
-              className="flex-1 min-w-[160px] rounded-md border border-neutral-300 px-3 py-1.5 text-sm"
+              className={`min-w-[160px] flex-1 ${inputCls}`}
             />
           )}
           <button
             type="button"
             onClick={() => remove(r.id)}
-            className="rounded-md border border-neutral-300 px-2 py-1.5 text-xs text-neutral-700 hover:bg-neutral-50"
+            className="rounded-md border border-border bg-surface px-2 py-1.5 text-xs text-text-muted transition hover:bg-surface-muted hover:text-text"
           >
             Remove
           </button>
@@ -112,7 +114,7 @@ export function AttributeEditor({
       <button
         type="button"
         onClick={add}
-        className="rounded-md border border-dashed border-neutral-300 px-3 py-1.5 text-sm text-neutral-700 hover:border-neutral-400"
+        className="rounded-md border border-dashed border-border px-3 py-1.5 text-sm text-text-muted transition hover:border-primary hover:text-primary"
       >
         + Add attribute
       </button>

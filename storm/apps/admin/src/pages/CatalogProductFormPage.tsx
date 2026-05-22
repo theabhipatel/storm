@@ -1,10 +1,14 @@
+import { Archive, RotateCcw, Send } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { AdminShell } from "../components/AdminShell";
 import { AttributeEditor } from "../components/AttributeEditor";
 import { MediaUploader } from "../components/MediaUploader";
+import { AdminShell } from "../components/shell/AdminShell";
+import { PageHeader } from "../components/shell/PageHeader";
 import { StatusBadge } from "../components/StatusBadge";
+import { Button } from "../components/ui/Button";
+import { Card, CardHeader } from "../components/ui/Card";
 import { VariantEditor } from "../components/VariantEditor";
 import {
   useArchiveProductMutation,
@@ -42,6 +46,9 @@ const EMPTY: FormState = {
   basePrice: "",
   attributes: {},
 };
+
+const inputCls =
+  "block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30";
 
 export function CatalogProductFormPage() {
   const { id } = useParams<{ id?: string }>();
@@ -153,115 +160,141 @@ export function CatalogProductFormPage() {
   const lifecycleBusy = pubState.isLoading || arcState.isLoading || resState.isLoading;
 
   return (
-    <AdminShell title={isNew ? "Catalog · New product" : `Catalog · ${product?.name ?? "Product"}`}>
+    <AdminShell>
+      <PageHeader
+        breadcrumbs={[
+          { label: "Catalog" },
+          { label: "Products", to: "/catalog/products" },
+          { label: isNew ? "New product" : (product?.name ?? "Edit") },
+        ]}
+        title={isNew ? "New product" : (product?.name ?? "Edit product")}
+        subtitle={!isNew && product ? `SKU ${product.sku}` : undefined}
+        actions={
+          <>
+            <Button variant="outline" onClick={() => navigate("/catalog/products")}>
+              Cancel
+            </Button>
+            <Button onClick={() => void save()} disabled={saving || isFetching}>
+              {saving ? "Saving…" : isNew ? "Create draft" : "Save changes"}
+            </Button>
+          </>
+        }
+      />
+
       <div className="space-y-6">
         {!isNew && product && (
-          <div className="flex items-center gap-3 rounded-md border border-neutral-200 bg-white p-3 text-sm">
-            <StatusBadge status={product.status} />
-            <span className="text-neutral-600">
-              {product.publishedAt
-                ? `Published ${new Date(product.publishedAt).toLocaleString("en-IN")}`
-                : "Not published"}
-            </span>
-            <div className="ml-auto flex gap-2">
-              {product.status === "draft" && (
-                <button
-                  type="button"
-                  disabled={lifecycleBusy || !validation.canPublish}
-                  title={
-                    validation.canPublish
-                      ? "Publish to customers"
-                      : validation.reasons.join(" • ")
-                  }
-                  onClick={() => void onLifecycle("publish")}
-                  className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
-                >
-                  Publish
-                </button>
-              )}
-              {product.status === "published" && (
-                <button
-                  type="button"
-                  disabled={lifecycleBusy}
-                  onClick={() => void onLifecycle("archive")}
-                  className="rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-900 disabled:opacity-50"
-                >
-                  Archive
-                </button>
-              )}
-              {product.status === "archived" && (
-                <button
-                  type="button"
-                  disabled={lifecycleBusy}
-                  onClick={() => void onLifecycle("restore")}
-                  className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-800 disabled:opacity-50"
-                >
-                  Restore to draft
-                </button>
-              )}
+          <Card padding="md">
+            <div className="flex flex-wrap items-center gap-3 text-sm">
+              <StatusBadge status={product.status} />
+              <span className="text-text-muted">
+                {product.publishedAt
+                  ? `Published ${new Date(product.publishedAt).toLocaleString("en-IN")}`
+                  : "Not published"}
+              </span>
+              <div className="ml-auto flex flex-wrap gap-2">
+                {product.status === "draft" && (
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    disabled={lifecycleBusy || !validation.canPublish}
+                    title={
+                      validation.canPublish
+                        ? "Publish to customers"
+                        : validation.reasons.join(" • ")
+                    }
+                    onClick={() => void onLifecycle("publish")}
+                    leadingIcon={<Send className="h-3.5 w-3.5" aria-hidden />}
+                  >
+                    Publish
+                  </Button>
+                )}
+                {product.status === "published" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={lifecycleBusy}
+                    onClick={() => void onLifecycle("archive")}
+                    leadingIcon={<Archive className="h-3.5 w-3.5" aria-hidden />}
+                  >
+                    Archive
+                  </Button>
+                )}
+                {product.status === "archived" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={lifecycleBusy}
+                    onClick={() => void onLifecycle("restore")}
+                    leadingIcon={<RotateCcw className="h-3.5 w-3.5" aria-hidden />}
+                  >
+                    Restore to draft
+                  </Button>
+                )}
+              </div>
             </div>
-          </div>
+          </Card>
         )}
 
         {error && (
-          <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+          <div className="rounded-md border border-danger/30 bg-danger-soft p-3 text-sm text-danger">
             {error}
           </div>
         )}
 
         {draftRestoredFromLocal && (
-          <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800">
+          <div className="rounded-md border border-warning/30 bg-warning-soft p-2 text-xs text-warning-foreground">
             Restored unsaved draft from this browser.
           </div>
         )}
 
-        {/* Basics */}
-        <section className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
-          <h2 className="text-sm font-semibold text-neutral-900">Basics</h2>
-          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-            <Field
+        <Card padding="lg">
+          <CardHeader title="Basics" />
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <SmallField
               label="Name"
               value={form.name}
               onChange={(v) => setForm((f) => ({ ...f, name: v }))}
               required
             />
-            <Field
+            <SmallField
               label="SKU"
               value={form.sku}
               onChange={(v) => setForm((f) => ({ ...f, sku: v.toUpperCase() }))}
               mono
               required
             />
-            <Field
+            <SmallField
               label="Slug (auto from name if blank)"
               value={form.slug}
               onChange={(v) => setForm((f) => ({ ...f, slug: v }))}
               mono
             />
             <div>
-              <label className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+              <label className="text-xs font-medium uppercase tracking-wide text-text-subtle">
                 Price (paise)
               </label>
               <input
                 type="number"
                 value={form.basePrice}
-                onChange={(e) => setForm((f) => ({ ...f, basePrice: e.target.value }))}
-                className="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, basePrice: e.target.value }))
+                }
+                className={`mt-1 ${inputCls}`}
               />
               {form.basePrice && Number(form.basePrice) > 0 && (
-                <p className="mt-1 text-xs text-neutral-500">
+                <p className="mt-1 text-xs text-text-subtle">
                   Display: {formatINR(Number(form.basePrice))}
                 </p>
               )}
             </div>
             <div>
-              <label className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+              <label className="text-xs font-medium uppercase tracking-wide text-text-subtle">
                 Brand
               </label>
               <select
                 value={form.brandId}
                 onChange={(e) => setForm((f) => ({ ...f, brandId: e.target.value }))}
-                className="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+                className={`mt-1 ${inputCls}`}
               >
                 <option value="">-- select --</option>
                 {(brands?.items ?? []).map((b) => (
@@ -272,17 +305,19 @@ export function CatalogProductFormPage() {
               </select>
             </div>
             <div>
-              <label className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+              <label className="text-xs font-medium uppercase tracking-wide text-text-subtle">
                 Category
               </label>
               <select
                 value={form.categoryId}
-                onChange={(e) => setForm((f) => ({ ...f, categoryId: e.target.value }))}
-                className="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, categoryId: e.target.value }))
+                }
+                className={`mt-1 ${inputCls}`}
               >
                 <option value="">-- select --</option>
-                {flatten(categories?.items ?? []).map(({ id, label }) => (
-                  <option key={id} value={id}>
+                {flatten(categories?.items ?? []).map(({ id: cid, label }) => (
+                  <option key={cid} value={cid}>
                     {label}
                   </option>
                 ))}
@@ -290,69 +325,53 @@ export function CatalogProductFormPage() {
             </div>
           </div>
 
-          <div className="mt-3">
-            <label className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+          <div className="mt-4">
+            <label className="text-xs font-medium uppercase tracking-wide text-text-subtle">
               Description (Markdown)
             </label>
             <div className="mt-1 grid grid-cols-1 gap-3 lg:grid-cols-2">
               <textarea
                 value={form.description}
-                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, description: e.target.value }))
+                }
                 rows={10}
                 placeholder="# Heading&#10;- list item"
-                className="block w-full rounded-md border border-neutral-300 px-3 py-2 font-mono text-sm"
+                className="block w-full rounded-md border border-border bg-surface px-3 py-2 font-mono text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
               />
               <div
-                className="prose prose-sm h-full max-w-none overflow-auto rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm"
+                className="prose prose-sm h-full max-w-none overflow-auto rounded-md border border-border bg-surface-muted px-3 py-2 text-sm"
                 aria-label="Markdown preview"
                 dangerouslySetInnerHTML={{
-                  __html: renderMarkdownPreview(form.description || "*Preview will appear here.*"),
+                  __html: renderMarkdownPreview(
+                    form.description || "*Preview will appear here.*",
+                  ),
                 }}
               />
             </div>
           </div>
-        </section>
+        </Card>
 
-        {/* Attributes */}
-        <section className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
-          <h2 className="mb-2 text-sm font-semibold text-neutral-900">Attributes</h2>
+        <Card padding="lg">
+          <CardHeader title="Attributes" description="Free-form key/value pairs (RAM, color, etc.)." />
           <AttributeEditor
             value={form.attributes}
             onChange={(next) => setForm((f) => ({ ...f, attributes: next }))}
           />
-        </section>
+        </Card>
 
-        {/* Media + variants only on existing products (need an id). */}
         {!isNew && product && (
           <>
-            <section className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
-              <h2 className="mb-2 text-sm font-semibold text-neutral-900">Media</h2>
+            <Card padding="lg">
+              <CardHeader title="Media" description="Drag to reorder; the primary image shows on listings." />
               <MediaUploader productId={product.id} media={product.media} />
-            </section>
-            <section className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
-              <h2 className="mb-2 text-sm font-semibold text-neutral-900">Variants</h2>
+            </Card>
+            <Card padding="lg">
+              <CardHeader title="Variants" description="Override SKU and price for product options." />
               <VariantEditor productId={product.id} variants={product.variants} />
-            </section>
+            </Card>
           </>
         )}
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => void save()}
-            disabled={saving || isFetching}
-            className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-          >
-            {saving ? "Saving…" : isNew ? "Create draft" : "Save changes"}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate("/catalog/products")}
-            className="rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm text-neutral-700"
-          >
-            Cancel
-          </button>
-        </div>
       </div>
     </AdminShell>
   );
@@ -370,7 +389,7 @@ function flatten(
   return out;
 }
 
-function Field({
+function SmallField({
   label,
   value,
   onChange,
@@ -385,18 +404,15 @@ function Field({
 }) {
   return (
     <div>
-      <label className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+      <label className="text-xs font-medium uppercase tracking-wide text-text-subtle">
         {label}
-        {required && <span className="text-red-600"> *</span>}
+        {required && <span className="text-danger"> *</span>}
       </label>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
         required={required}
-        className={
-          "mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-sm " +
-          (mono ? "font-mono" : "")
-        }
+        className={`mt-1 ${inputCls} ${mono ? "font-mono" : ""}`}
       />
     </div>
   );

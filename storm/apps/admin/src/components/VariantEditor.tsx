@@ -34,21 +34,21 @@ export function VariantEditor({
 
   return (
     <div className="space-y-3">
-      <div className="overflow-hidden rounded-md border border-neutral-200">
+      <div className="overflow-hidden rounded-md border border-border">
         <table className="w-full text-sm">
-          <thead className="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+          <thead className="bg-surface-muted text-xs uppercase tracking-wide text-text-subtle">
             <tr>
               <th className="px-3 py-2 text-left font-medium">SKU</th>
               <th className="px-3 py-2 text-left font-medium">Name</th>
               <th className="px-3 py-2 text-left font-medium">Price (paise)</th>
               <th className="px-3 py-2 text-left font-medium">Display</th>
-              <th className="px-3 py-2 w-24" />
+              <th className="w-24 px-3 py-2" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-neutral-100">
+          <tbody className="divide-y divide-border">
             {variants.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-3 py-4 text-center text-neutral-500">
+                <td colSpan={5} className="px-3 py-4 text-center text-text-subtle">
                   No variants yet.
                 </td>
               </tr>
@@ -72,48 +72,48 @@ export function VariantEditor({
 
       <form
         onSubmit={onAdd}
-        className="flex flex-wrap items-end gap-2 rounded-md border border-dashed border-neutral-300 p-3"
+        className="flex flex-wrap items-end gap-2 rounded-md border border-dashed border-border p-3"
       >
-        <div className="flex-1 min-w-[140px]">
-          <label className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+        <div className="min-w-[140px] flex-1">
+          <label className="text-xs font-medium uppercase tracking-wide text-text-subtle">
             SKU
           </label>
           <input
             value={draft.sku}
             onChange={(e) => setDraft((d) => ({ ...d, sku: e.target.value }))}
-            className="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-1.5 text-sm"
+            className="mt-1 block w-full rounded-md border border-border bg-surface px-3 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
             placeholder="ACER-ASP5-16GB"
             required
           />
         </div>
-        <div className="flex-1 min-w-[140px]">
-          <label className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+        <div className="min-w-[140px] flex-1">
+          <label className="text-xs font-medium uppercase tracking-wide text-text-subtle">
             Name
           </label>
           <input
             value={draft.name}
             onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
-            className="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-1.5 text-sm"
+            className="mt-1 block w-full rounded-md border border-border bg-surface px-3 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
             placeholder="16GB / 512GB"
             required
           />
         </div>
         <div>
-          <label className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+          <label className="text-xs font-medium uppercase tracking-wide text-text-subtle">
             Price
           </label>
           <input
             type="number"
             value={draft.price}
             onChange={(e) => setDraft((d) => ({ ...d, price: e.target.value }))}
-            className="mt-1 block w-32 rounded-md border border-neutral-300 px-3 py-1.5 text-sm"
+            className="mt-1 block w-32 rounded-md border border-border bg-surface px-3 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
             placeholder="inherit"
           />
         </div>
         <button
           type="submit"
           disabled={addState.isLoading}
-          className="rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+          className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition hover:bg-primary-hover disabled:opacity-50"
         >
           Add variant
         </button>
@@ -152,14 +152,18 @@ function VariantRow({
   if (!editing) {
     return (
       <tr>
-        <td className="px-3 py-2 font-mono text-xs">{variant.sku}</td>
-        <td className="px-3 py-2">{variant.name}</td>
-        <td className="px-3 py-2">{variant.price ?? <em className="text-neutral-400">inherit</em>}</td>
-        <td className="px-3 py-2">{variant.price !== null ? formatINR(variant.price) : "—"}</td>
+        <td className="px-3 py-2 font-mono text-xs text-text">{variant.sku}</td>
+        <td className="px-3 py-2 text-text">{variant.name}</td>
+        <td className="px-3 py-2 text-text">
+          {variant.price ?? <em className="text-text-subtle">inherit</em>}
+        </td>
+        <td className="px-3 py-2 text-text">
+          {variant.price !== null ? formatINR(variant.price) : "—"}
+        </td>
         <td className="px-3 py-2 text-right">
           <button
             onClick={() => setEditing(true)}
-            className="mr-1 rounded border border-neutral-300 px-2 py-1 text-xs"
+            className="mr-1 rounded border border-border bg-surface px-2 py-1 text-xs text-text transition hover:bg-surface-muted"
           >
             Edit
           </button>
@@ -167,7 +171,7 @@ function VariantRow({
             onClick={() => {
               if (confirm("Delete variant?")) void onDelete();
             }}
-            className="rounded border border-red-300 px-2 py-1 text-xs text-red-700 hover:bg-red-50"
+            className="rounded border border-danger/40 px-2 py-1 text-xs text-danger transition hover:bg-danger-soft"
           >
             Delete
           </button>
@@ -175,20 +179,22 @@ function VariantRow({
       </tr>
     );
   }
+  const editInputCls =
+    "rounded-md border border-border bg-surface px-2 py-1 text-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30";
   return (
-    <tr className="bg-neutral-50">
+    <tr className="bg-surface-muted">
       <td className="px-3 py-2">
         <input
           value={form.sku}
           onChange={(e) => setForm((f) => ({ ...f, sku: e.target.value }))}
-          className="w-36 rounded-md border border-neutral-300 px-2 py-1 text-xs"
+          className={`w-36 ${editInputCls}`}
         />
       </td>
       <td className="px-3 py-2">
         <input
           value={form.name}
           onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-          className="w-full rounded-md border border-neutral-300 px-2 py-1 text-xs"
+          className={`w-full ${editInputCls}`}
         />
       </td>
       <td className="px-3 py-2">
@@ -196,21 +202,23 @@ function VariantRow({
           type="number"
           value={form.price}
           onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
-          className="w-28 rounded-md border border-neutral-300 px-2 py-1 text-xs"
+          className={`w-28 ${editInputCls}`}
           placeholder="inherit"
         />
       </td>
-      <td className="px-3 py-2">{form.price ? formatINR(Number(form.price)) : "—"}</td>
+      <td className="px-3 py-2 text-text">
+        {form.price ? formatINR(Number(form.price)) : "—"}
+      </td>
       <td className="px-3 py-2 text-right">
         <button
           onClick={() => void save()}
-          className="mr-1 rounded bg-neutral-900 px-2 py-1 text-xs text-white"
+          className="mr-1 rounded bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary-hover"
         >
           Save
         </button>
         <button
           onClick={() => setEditing(false)}
-          className="rounded border border-neutral-300 px-2 py-1 text-xs"
+          className="rounded border border-border bg-surface px-2 py-1 text-xs text-text hover:bg-surface-muted"
         >
           Cancel
         </button>

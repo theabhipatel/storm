@@ -1,6 +1,9 @@
+import { Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 
-import { AdminShell } from "../components/AdminShell";
+import { AdminShell } from "../components/shell/AdminShell";
+import { PageHeader } from "../components/shell/PageHeader";
+import { Card } from "../components/ui/Card";
 import {
   useCreateBrandMutation,
   useDeleteBrandMutation,
@@ -48,80 +51,86 @@ export function CatalogBrandsPage() {
   }
 
   return (
-    <AdminShell title="Catalog · Brands">
+    <AdminShell>
+      <PageHeader
+        breadcrumbs={[{ label: "Catalog" }, { label: "Brands" }]}
+        title="Brands"
+        subtitle={data ? `${data.items.length} brands.` : undefined}
+      />
       <div className="space-y-4">
         {error && (
-          <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+          <div className="rounded-md border border-danger/30 bg-danger-soft p-3 text-sm text-danger">
             {error}
           </div>
         )}
-        <form
-          onSubmit={add}
-          className="flex items-end gap-2 rounded-md border border-neutral-200 bg-white p-3 shadow-sm"
-        >
-          <div className="flex-1">
-            <label className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-              New brand
-            </label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              placeholder="e.g. Acer"
-              className="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-            />
-          </div>
-          <button
-            type="submit"
-            className="rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white"
-          >
-            Add
-          </button>
-        </form>
+        <Card padding="md">
+          <form onSubmit={add} className="flex items-end gap-2">
+            <div className="flex-1">
+              <label className="text-xs font-medium uppercase tracking-wide text-text-subtle">
+                New brand
+              </label>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                placeholder="e.g. Acer"
+                className="mt-1 block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
+              />
+            </div>
+            <button
+              type="submit"
+              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary-hover"
+            >
+              Add brand
+            </button>
+          </form>
+        </Card>
 
-        <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-card">
           <table className="w-full text-sm">
-            <thead className="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+            <thead className="bg-surface-muted text-xs font-semibold uppercase tracking-wide text-text-subtle">
               <tr>
-                <th className="px-4 py-2 text-left font-medium">Name</th>
-                <th className="px-4 py-2 text-left font-medium">Slug</th>
-                <th className="px-4 py-2 text-left font-medium">Created</th>
-                <th className="px-4 py-2" />
+                <th className="px-4 py-3 text-left">Name</th>
+                <th className="px-4 py-3 text-left">Slug</th>
+                <th className="px-4 py-3 text-left">Created</th>
+                <th className="px-4 py-3 text-right" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-100">
+            <tbody className="divide-y divide-border">
               {isFetching && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-6 text-center text-neutral-500">
+                  <td colSpan={4} className="px-4 py-6 text-center text-text-subtle">
                     Loading…
                   </td>
                 </tr>
               )}
               {data && data.items.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-6 text-center text-neutral-500">
+                  <td colSpan={4} className="px-4 py-6 text-center text-text-subtle">
                     No brands yet.
                   </td>
                 </tr>
               )}
               {(data?.items ?? []).map((b) => (
-                <tr key={b.id}>
-                  <td className="px-4 py-2 font-medium text-neutral-900">{b.name}</td>
-                  <td className="px-4 py-2 font-mono text-xs text-neutral-500">{b.slug}</td>
-                  <td className="px-4 py-2 text-xs text-neutral-500">
+                <tr key={b.id} className="transition hover:bg-surface-muted">
+                  <td className="px-4 py-3 font-medium text-text">{b.name}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-text-muted">{b.slug}</td>
+                  <td className="px-4 py-3 text-xs text-text-muted">
                     {new Date(b.createdAt).toLocaleDateString("en-IN")}
                   </td>
-                  <td className="px-4 py-2 text-right">
+                  <td className="px-4 py-3 text-right">
                     <button
                       onClick={() => rename(b.id)}
-                      className="mr-1 rounded border border-neutral-300 px-2 py-1 text-xs"
+                      className="mr-1 inline-flex items-center gap-1 rounded-md border border-border bg-surface px-2 py-1 text-xs text-text-muted transition hover:bg-surface-muted hover:text-text"
                     >
+                      <Pencil className="h-3 w-3" aria-hidden />
                       Rename
                     </button>
                     <button
                       onClick={() => remove(b.id)}
-                      className="rounded border border-red-300 px-2 py-1 text-xs text-red-700 hover:bg-red-50"
+                      className="inline-flex items-center gap-1 rounded-md border border-danger/40 px-2 py-1 text-xs text-danger transition hover:bg-danger-soft"
                     >
+                      <Trash2 className="h-3 w-3" aria-hidden />
                       Delete
                     </button>
                   </td>

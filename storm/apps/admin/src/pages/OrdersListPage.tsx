@@ -1,9 +1,13 @@
+import type { OrderStatus, OrderSummary } from "@storm/contracts";
+import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import type { OrderStatus, OrderSummary } from "@storm/contracts";
 
-import { AdminShell } from "../components/AdminShell";
 import { ExportButton } from "../components/ExportButton";
+import { AdminShell } from "../components/shell/AdminShell";
+import { PageHeader } from "../components/shell/PageHeader";
+import { Button } from "../components/ui/Button";
+import { Card } from "../components/ui/Card";
 import { OrderStatusBadge } from "../features/orders/OrderStatusBadge";
 import { useListAdminOrdersQuery } from "../features/orders/orders.api";
 import { formatINR } from "../lib/format";
@@ -18,6 +22,9 @@ const STATUS_OPTIONS: { value: OrderStatus | ""; label: string }[] = [
   { value: "cancelled", label: "Cancelled" },
   { value: "failed", label: "Failed" },
 ];
+
+const inputCls =
+  "rounded-md border border-border bg-surface px-3 py-1.5 text-sm shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30";
 
 function toIso(dateStr: string): string | undefined {
   if (!dateStr) return undefined;
@@ -76,20 +83,22 @@ export function OrdersListPage() {
   if (toIsoVal) exportFilters["to"] = toIsoVal;
 
   return (
-    <AdminShell title="Orders">
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-neutral-900">Orders</h1>
-          <ExportButton kind="orders" filters={exportFilters} />
-        </div>
+    <AdminShell>
+      <PageHeader
+        breadcrumbs={[{ label: "Orders" }]}
+        title="Orders"
+        subtitle="All customer orders across statuses."
+        actions={<ExportButton kind="orders" filters={exportFilters} />}
+      />
 
-        <div className="flex flex-wrap items-end gap-3 rounded-md border border-neutral-200 bg-white p-3">
-          <label className="flex flex-col text-xs text-neutral-600">
+      <Card padding="md" className="mb-4">
+        <div className="flex flex-wrap items-end gap-3">
+          <label className="flex flex-col gap-1 text-xs font-medium uppercase tracking-wide text-text-subtle">
             Status
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value as OrderStatus | "")}
-              className="mt-1 rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
+              className={inputCls}
             >
               {STATUS_OPTIONS.map((o) => (
                 <option key={o.value || "all"} value={o.value}>
@@ -98,122 +107,115 @@ export function OrdersListPage() {
               ))}
             </select>
           </label>
-          <label className="flex flex-1 flex-col text-xs text-neutral-600">
+          <label className="flex flex-1 flex-col gap-1 text-xs font-medium uppercase tracking-wide text-text-subtle">
             Search
-            <input
-              type="search"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Order ID or customer email"
-              className="mt-1 rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
-            />
+            <div className="relative">
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-subtle"
+                aria-hidden
+              />
+              <input
+                type="search"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Order ID or customer email"
+                className="block w-full rounded-md border border-border bg-surface py-1.5 pl-9 pr-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
+              />
+            </div>
           </label>
-          <label className="flex flex-col text-xs text-neutral-600">
+          <label className="flex flex-col gap-1 text-xs font-medium uppercase tracking-wide text-text-subtle">
             From
             <input
               type="date"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
-              className="mt-1 rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
+              className={inputCls}
             />
           </label>
-          <label className="flex flex-col text-xs text-neutral-600">
+          <label className="flex flex-col gap-1 text-xs font-medium uppercase tracking-wide text-text-subtle">
             To
             <input
               type="date"
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              className="mt-1 rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
+              className={inputCls}
             />
           </label>
-          <button
-            type="button"
-            onClick={applyFilter}
-            className="rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-semibold text-white"
-          >
-            Apply
-          </button>
+          <Button onClick={applyFilter}>Apply</Button>
         </div>
+      </Card>
 
-        {error && (
-          <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-            Failed to load orders.
-          </p>
-        )}
+      {error && (
+        <p className="mb-4 rounded-md border border-danger/30 bg-danger-soft px-3 py-2 text-sm text-danger">
+          Failed to load orders.
+        </p>
+      )}
 
-        <div className="overflow-hidden rounded-md border border-neutral-200 bg-white">
-          <table className="w-full text-sm">
-            <thead className="bg-neutral-50 text-left text-xs uppercase tracking-wide text-neutral-500">
+      <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-card">
+        <table className="w-full text-sm">
+          <thead className="border-b border-border bg-surface-muted text-left text-xs font-semibold uppercase tracking-wide text-text-subtle">
+            <tr>
+              <th className="px-4 py-3">Order</th>
+              <th className="px-4 py-3">Customer</th>
+              <th className="px-4 py-3 text-right">Total</th>
+              <th className="px-4 py-3 text-right">Items</th>
+              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Placed</th>
+              <th className="px-4 py-3">Updated</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {isFetching && accumulated.length === 0 && (
               <tr>
-                <th className="px-3 py-2">Order</th>
-                <th className="px-3 py-2">Customer</th>
-                <th className="px-3 py-2 text-right">Total</th>
-                <th className="px-3 py-2 text-right">Items</th>
-                <th className="px-3 py-2">Status</th>
-                <th className="px-3 py-2">Placed</th>
-                <th className="px-3 py-2">Updated</th>
+                <td colSpan={7} className="px-3 py-6 text-center text-text-subtle">
+                  Loading…
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100">
-              {isFetching && accumulated.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="px-3 py-4 text-center text-neutral-500">
-                    Loading…
-                  </td>
-                </tr>
-              )}
-              {accumulated.map((order) => (
-                <tr key={order.id} className="hover:bg-neutral-50">
-                  <td className="px-3 py-2 font-mono text-xs">
-                    <Link
-                      to={`/orders/${order.id}`}
-                      className="text-neutral-900 hover:underline"
-                    >
-                      {order.id.slice(0, 8)}
-                    </Link>
-                  </td>
-                  <td className="px-3 py-2 text-neutral-800">
-                    {order.customerEmail ?? "—"}
-                  </td>
-                  <td className="px-3 py-2 text-right font-semibold">
-                    {formatINR(order.totalPaise, order.currency)}
-                  </td>
-                  <td className="px-3 py-2 text-right">{order.itemsCount}</td>
-                  <td className="px-3 py-2">
-                    <OrderStatusBadge status={order.status as OrderStatus} />
-                  </td>
-                  <td className="px-3 py-2 text-xs text-neutral-500">
-                    {formatIst(order.createdAt)}
-                  </td>
-                  <td className="px-3 py-2 text-xs text-neutral-500">
-                    {order.updatedAt ? formatIst(order.updatedAt) : "—"}
-                  </td>
-                </tr>
-              ))}
-              {!isFetching && accumulated.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="px-3 py-4 text-center text-neutral-500">
-                    No orders match the filter.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+            )}
+            {accumulated.map((order) => (
+              <tr key={order.id} className="transition hover:bg-surface-muted">
+                <td className="px-4 py-3 font-mono text-xs">
+                  <Link
+                    to={`/orders/${order.id}`}
+                    className="text-primary hover:underline"
+                  >
+                    {order.id.slice(0, 8)}
+                  </Link>
+                </td>
+                <td className="px-4 py-3 text-text">{order.customerEmail ?? "—"}</td>
+                <td className="px-4 py-3 text-right font-semibold text-text">
+                  {formatINR(order.totalPaise, order.currency)}
+                </td>
+                <td className="px-4 py-3 text-right text-text-muted">{order.itemsCount}</td>
+                <td className="px-4 py-3">
+                  <OrderStatusBadge status={order.status as OrderStatus} />
+                </td>
+                <td className="px-4 py-3 text-xs text-text-subtle">
+                  {formatIst(order.createdAt)}
+                </td>
+                <td className="px-4 py-3 text-xs text-text-subtle">
+                  {order.updatedAt ? formatIst(order.updatedAt) : "—"}
+                </td>
+              </tr>
+            ))}
+            {!isFetching && accumulated.length === 0 && (
+              <tr>
+                <td colSpan={7} className="px-3 py-6 text-center text-text-subtle">
+                  No orders match the filter.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
-        {data?.nextCursor ? (
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={loadMore}
-              disabled={isFetching}
-              className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-800 disabled:opacity-50"
-            >
-              {isFetching ? "Loading…" : "Load more"}
-            </button>
-          </div>
-        ) : null}
-      </section>
+      {data?.nextCursor ? (
+        <div className="mt-4 text-center">
+          <Button variant="outline" onClick={loadMore} disabled={isFetching}>
+            {isFetching ? "Loading…" : "Load more"}
+          </Button>
+        </div>
+      ) : null}
     </AdminShell>
   );
 }

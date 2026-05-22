@@ -1,3 +1,4 @@
+import { Star, Trash2, UploadCloud } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import {
@@ -108,14 +109,15 @@ export function MediaUploader({
       <div
         onDrop={onDrop}
         onDragOver={(e) => e.preventDefault()}
-        className="flex flex-col items-center justify-center rounded-md border-2 border-dashed border-neutral-300 bg-neutral-50 p-6 text-sm text-neutral-600"
+        className="flex flex-col items-center justify-center rounded-md border-2 border-dashed border-border bg-surface-muted p-6 text-center text-sm text-text-muted transition hover:border-primary hover:bg-primary-soft"
       >
-        <p>Drag and drop images here</p>
-        <p className="text-xs text-neutral-500">JPEG, PNG, WebP up to 10MB each</p>
+        <UploadCloud className="mb-2 h-8 w-8 text-text-subtle" aria-hidden />
+        <p className="font-medium text-text">Drag and drop images here</p>
+        <p className="text-xs text-text-subtle">JPEG, PNG, WebP up to 10MB each</p>
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
-          className="mt-3 rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm"
+          className="mt-3 rounded-md border border-border-strong bg-surface px-3 py-1.5 text-sm font-medium text-text transition hover:bg-surface-muted"
         >
           Browse files
         </button>
@@ -130,13 +132,13 @@ export function MediaUploader({
       </div>
 
       {error && (
-        <p className="rounded-md border border-red-200 bg-red-50 p-2 text-xs text-red-800">
+        <p className="rounded-md border border-danger/30 bg-danger-soft p-2 text-xs text-danger">
           {error}
         </p>
       )}
 
       {uploading.length > 0 && (
-        <ul className="space-y-1 text-xs text-neutral-600">
+        <ul className="space-y-1 text-xs text-text-muted">
           {uploading.map((u) => (
             <li key={u.name}>
               {u.name} — {u.pct}%
@@ -219,12 +221,12 @@ function MediaTile({
         onDropTo(idx);
       }}
       className={
-        "relative overflow-hidden rounded-md border transition " +
+        "relative overflow-hidden rounded-md border bg-surface transition " +
         (media.isPrimary
-          ? "border-emerald-400 ring-2 ring-emerald-200"
+          ? "border-primary ring-2 ring-primary/20"
           : dragIdx === idx
-          ? "border-neutral-900 opacity-60"
-          : "border-neutral-200")
+            ? "border-text opacity-60"
+            : "border-border")
       }
     >
       {thumbUrl ? (
@@ -234,19 +236,25 @@ function MediaTile({
           className="aspect-square w-full cursor-move object-cover"
         />
       ) : (
-        <div className="flex aspect-square w-full items-center justify-center bg-neutral-100 text-xs text-neutral-500">
+        <div className="flex aspect-square w-full items-center justify-center bg-surface-muted text-xs text-text-subtle">
           {status}
         </div>
       )}
-      <div className="space-y-2 border-t border-neutral-100 bg-white p-2 text-xs">
-        <div className="flex items-center justify-between">
+      <div className="space-y-2 border-t border-border bg-surface p-2 text-xs">
+        <div className="flex items-center justify-between text-text">
           <span className="truncate">
-            {media.isPrimary ? <strong>Primary</strong> : <span>#{media.order + 1}</span>}
+            {media.isPrimary ? (
+              <span className="inline-flex items-center gap-1 font-semibold text-primary">
+                <Star className="h-3 w-3 fill-current" aria-hidden /> Primary
+              </span>
+            ) : (
+              <span>#{media.order + 1}</span>
+            )}
           </span>
-          <span className="text-neutral-400">{status}</span>
+          <span className="text-text-subtle">{status}</span>
         </div>
         <div>
-          <label className="text-[10px] font-medium uppercase tracking-wide text-neutral-500">
+          <label className="text-[10px] font-medium uppercase tracking-wide text-text-subtle">
             Alt text
           </label>
           <input
@@ -259,16 +267,26 @@ function MediaTile({
               if (dirty) onSaveAlt(draft);
             }}
             placeholder="describe the image"
-            className="mt-0.5 block w-full rounded border border-neutral-300 px-2 py-1 text-xs"
+            className="mt-0.5 block w-full rounded border border-border bg-surface px-2 py-1 text-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
           />
         </div>
-        <div className="flex gap-1 border-t border-neutral-100 pt-1">
+        <div className="flex gap-1 border-t border-border pt-1.5 text-text-muted">
           {!media.isPrimary && (
-            <button type="button" onClick={onMakePrimary} className="text-neutral-700 hover:underline">
+            <button
+              type="button"
+              onClick={onMakePrimary}
+              className="inline-flex items-center gap-1 hover:text-primary"
+            >
+              <Star className="h-3 w-3" aria-hidden />
               Make primary
             </button>
           )}
-          <button type="button" onClick={onRemove} className="ml-auto text-red-700 hover:underline">
+          <button
+            type="button"
+            onClick={onRemove}
+            className="ml-auto inline-flex items-center gap-1 text-danger hover:underline"
+          >
+            <Trash2 className="h-3 w-3" aria-hidden />
             Remove
           </button>
         </div>

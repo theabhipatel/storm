@@ -1,9 +1,13 @@
+import { ImageOff, Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
-import { AdminShell } from "../components/AdminShell";
 import { DataTable, type DataTableColumn } from "../components/DataTable";
+import { AdminShell } from "../components/shell/AdminShell";
+import { PageHeader } from "../components/shell/PageHeader";
 import { StatusBadge } from "../components/StatusBadge";
+import { Button } from "../components/ui/Button";
+import { Card } from "../components/ui/Card";
 import {
   useListBrandsQuery,
   useListCategoryTreeQuery,
@@ -15,6 +19,9 @@ import {
 } from "../features/catalog/catalog.api";
 import { MEDIA_BASE_URL } from "../features/media/media.api";
 import { formatINR } from "../lib/format";
+
+const selectCls =
+  "rounded-md border border-border bg-surface px-3 py-2 text-sm shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30";
 
 export function CatalogProductsListPage() {
   const navigate = useNavigate();
@@ -51,20 +58,39 @@ export function CatalogProductsListPage() {
             <img
               src={`${MEDIA_BASE_URL}/api/media/${r.primaryMediaId}/raw`}
               alt=""
-              className="h-10 w-10 rounded object-cover"
+              className="h-10 w-10 rounded-md border border-border object-cover"
             />
           ) : (
-            <div className="h-10 w-10 rounded bg-neutral-100" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-surface-muted text-text-subtle">
+              <ImageOff className="h-4 w-4" aria-hidden />
+            </div>
           ),
       },
-      { key: "sku", header: "SKU", render: (r) => <span className="font-mono text-xs">{r.sku}</span> },
-      { key: "name", header: "Name", render: (r) => r.name },
+      {
+        key: "sku",
+        header: "SKU",
+        render: (r) => <span className="font-mono text-xs text-text-muted">{r.sku}</span>,
+      },
+      {
+        key: "name",
+        header: "Name",
+        render: (r) => <span className="font-medium text-text">{r.name}</span>,
+      },
       { key: "status", header: "Status", render: (r) => <StatusBadge status={r.status} /> },
-      { key: "brand", header: "Brand", render: (r) => brandName.get(r.brandId) ?? "—" },
-      { key: "category", header: "Category", render: (r) => categoryName.get(r.categoryId) ?? "—" },
+      {
+        key: "brand",
+        header: "Brand",
+        render: (r) => brandName.get(r.brandId) ?? "—",
+      },
+      {
+        key: "category",
+        header: "Category",
+        render: (r) => categoryName.get(r.categoryId) ?? "—",
+      },
       {
         key: "price",
         header: "Price",
+        align: "right",
         render: (r) => formatINR(r.basePrice, r.currency),
         width: "140px",
       },
@@ -79,78 +105,113 @@ export function CatalogProductsListPage() {
   );
 
   return (
-    <AdminShell title="Catalog · Products">
-      <div className="mb-4 flex flex-wrap items-end gap-3 rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
-        <div className="flex-1 min-w-[200px]">
-          <label className="text-xs font-medium uppercase tracking-wide text-neutral-500">Search</label>
-          <input
-            type="text"
-            value={filters.q ?? ""}
-            placeholder="name, SKU or slug"
-            onChange={(e) => setFilters((f) => ({ ...f, q: e.target.value, page: 1 }))}
-            className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
-          />
-        </div>
-        <div>
-          <label className="text-xs font-medium uppercase tracking-wide text-neutral-500">Status</label>
-          <select
-            value={filters.status ?? ""}
-            onChange={(e) =>
-              setFilters((f) => ({
-                ...f,
-                status: (e.target.value || undefined) as ProductStatus | undefined,
-                page: 1,
-              }))
-            }
-            className="mt-1 block w-36 rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm"
+    <AdminShell>
+      <PageHeader
+        breadcrumbs={[{ label: "Catalog" }, { label: "Products" }]}
+        title="Products"
+        subtitle={`Manage your catalog${data ? ` · ${data.total} total` : ""}.`}
+        actions={
+          <Button
+            variant="primary"
+            leadingIcon={<Plus className="h-4 w-4" aria-hidden />}
+            onClick={() => navigate("/catalog/products/new")}
           >
-            <option value="">All</option>
-            <option value="draft">draft</option>
-            <option value="published">published</option>
-            <option value="archived">archived</option>
-          </select>
+            New product
+          </Button>
+        }
+      />
+
+      <Card padding="md" className="mb-4">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="min-w-[200px] flex-1">
+            <label className="text-xs font-medium uppercase tracking-wide text-text-subtle">
+              Search
+            </label>
+            <div className="relative mt-1">
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-subtle"
+                aria-hidden
+              />
+              <input
+                type="text"
+                value={filters.q ?? ""}
+                placeholder="name, SKU or slug"
+                onChange={(e) =>
+                  setFilters((f) => ({ ...f, q: e.target.value, page: 1 }))
+                }
+                className="block w-full rounded-md border border-border bg-surface py-2 pl-9 pr-3 text-sm shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-medium uppercase tracking-wide text-text-subtle">
+              Status
+            </label>
+            <select
+              value={filters.status ?? ""}
+              onChange={(e) =>
+                setFilters((f) => ({
+                  ...f,
+                  status: (e.target.value || undefined) as ProductStatus | undefined,
+                  page: 1,
+                }))
+              }
+              className={`mt-1 block w-36 ${selectCls}`}
+            >
+              <option value="">All</option>
+              <option value="draft">Draft</option>
+              <option value="published">Published</option>
+              <option value="archived">Archived</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-medium uppercase tracking-wide text-text-subtle">
+              Category
+            </label>
+            <select
+              value={filters.categoryId ?? ""}
+              onChange={(e) =>
+                setFilters((f) => ({
+                  ...f,
+                  categoryId: e.target.value || undefined,
+                  page: 1,
+                }))
+              }
+              className={`mt-1 block w-48 ${selectCls}`}
+            >
+              <option value="">All</option>
+              {[...categoryName.entries()].map(([id, name]) => (
+                <option key={id} value={id}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-medium uppercase tracking-wide text-text-subtle">
+              Brand
+            </label>
+            <select
+              value={filters.brandId ?? ""}
+              onChange={(e) =>
+                setFilters((f) => ({
+                  ...f,
+                  brandId: e.target.value || undefined,
+                  page: 1,
+                }))
+              }
+              className={`mt-1 block w-48 ${selectCls}`}
+            >
+              <option value="">All</option>
+              {(brands?.items ?? []).map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
-        <div>
-          <label className="text-xs font-medium uppercase tracking-wide text-neutral-500">Category</label>
-          <select
-            value={filters.categoryId ?? ""}
-            onChange={(e) =>
-              setFilters((f) => ({ ...f, categoryId: e.target.value || undefined, page: 1 }))
-            }
-            className="mt-1 block w-48 rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm"
-          >
-            <option value="">All</option>
-            {[...categoryName.entries()].map(([id, name]) => (
-              <option key={id} value={id}>
-                {name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="text-xs font-medium uppercase tracking-wide text-neutral-500">Brand</label>
-          <select
-            value={filters.brandId ?? ""}
-            onChange={(e) =>
-              setFilters((f) => ({ ...f, brandId: e.target.value || undefined, page: 1 }))
-            }
-            className="mt-1 block w-48 rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm"
-          >
-            <option value="">All</option>
-            {(brands?.items ?? []).map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <Link
-          to="/catalog/products/new"
-          className="ml-auto rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white"
-        >
-          + New product
-        </Link>
-      </div>
+      </Card>
 
       <DataTable
         columns={columns}

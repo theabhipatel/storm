@@ -1,11 +1,18 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
-import { AdminShell } from "../components/AdminShell";
+import { AdminShell } from "../components/shell/AdminShell";
+import { PageHeader } from "../components/shell/PageHeader";
+import { Badge } from "../components/ui/Badge";
+import { Button } from "../components/ui/Button";
+import { Card, CardHeader } from "../components/ui/Card";
 import {
   useAdjustStockMutation,
   useGetStockDetailQuery,
 } from "../features/inventory/inventory.api";
+
+const inputCls =
+  "rounded-md border border-border bg-surface px-3 py-1.5 text-sm shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30";
 
 export function InventoryDetailPage() {
   const { sku } = useParams<{ sku: string }>();
@@ -45,91 +52,88 @@ export function InventoryDetailPage() {
   }
 
   return (
-    <AdminShell title={`SKU ${sku ?? ""}`}>
-      <section className="space-y-4">
-        <header className="flex items-center justify-between">
-          <Link to="/inventory" className="text-sm text-neutral-600 hover:underline">
-            ← Back to inventory
-          </Link>
-          {data && data.belowThreshold && (
-            <span className="rounded bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-800">
-              Below threshold
-            </span>
-          )}
-        </header>
+    <AdminShell>
+      <PageHeader
+        breadcrumbs={[
+          { label: "Inventory", to: "/inventory" },
+          { label: sku ?? "" },
+        ]}
+        title={sku ? `SKU ${sku}` : "Stock detail"}
+        actions={
+          data?.belowThreshold ? <Badge variant="soft-danger">Below threshold</Badge> : null
+        }
+      />
 
+      <div className="space-y-4">
         {isFetching && !data && (
-          <p className="text-sm text-neutral-500">Loading…</p>
+          <p className="text-sm text-text-subtle">Loading…</p>
         )}
         {error && (
-          <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+          <p className="rounded-md border border-danger/30 bg-danger-soft px-3 py-2 text-sm text-danger">
             Failed to load detail.
           </p>
         )}
 
         {data && (
           <>
-            <div className="grid grid-cols-2 gap-4 rounded-md border border-neutral-200 bg-white p-4 sm:grid-cols-4">
-              <Stat label="SKU" value={data.sku} />
-              <Stat label="On hand" value={data.quantityOnHand} />
-              <Stat label="Reserved" value={data.quantityReserved} />
-              <Stat label="Available" value={data.quantityAvailable} highlight />
-              <Stat label="Threshold" value={data.lowStockThreshold} />
-              <Stat label="Updated" value={new Date(data.updatedAt).toLocaleString()} />
-            </div>
-
-            <form
-              onSubmit={(e) => void submit(e)}
-              className="space-y-3 rounded-md border border-neutral-200 bg-white p-4"
-            >
-              <h2 className="text-sm font-semibold text-neutral-900">Adjust stock</h2>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <label className="flex flex-col gap-1 text-xs text-neutral-600">
-                  Delta (+/-)
-                  <input
-                    type="number"
-                    value={delta}
-                    onChange={(e) => setDelta(Number(e.target.value))}
-                    className="rounded-md border border-neutral-300 px-2 py-1 text-sm"
-                  />
-                </label>
-                <label className="flex flex-col gap-1 text-xs text-neutral-600">
-                  Reason (required)
-                  <input
-                    type="text"
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    className="rounded-md border border-neutral-300 px-2 py-1 text-sm"
-                  />
-                </label>
-                <label className="flex flex-col gap-1 text-xs text-neutral-600">
-                  New threshold (optional)
-                  <input
-                    type="number"
-                    value={threshold}
-                    onChange={(e) => setThreshold(e.target.value)}
-                    className="rounded-md border border-neutral-300 px-2 py-1 text-sm"
-                  />
-                </label>
+            <Card padding="lg">
+              <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
+                <Stat label="SKU" value={data.sku} />
+                <Stat label="On hand" value={data.quantityOnHand} />
+                <Stat label="Reserved" value={data.quantityReserved} />
+                <Stat label="Available" value={data.quantityAvailable} highlight />
+                <Stat label="Threshold" value={data.lowStockThreshold} />
+                <Stat label="Updated" value={new Date(data.updatedAt).toLocaleString()} />
               </div>
-              <button
-                type="submit"
-                disabled={adjusting}
-                className="rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-semibold text-white hover:bg-neutral-800 disabled:opacity-60"
-              >
-                {adjusting ? "Saving…" : "Apply adjustment"}
-              </button>
-              {errMsg && <p className="text-sm text-red-600">{errMsg}</p>}
-              {success && <p className="text-sm text-emerald-600">{success}</p>}
-            </form>
+            </Card>
 
-            <section>
-              <h2 className="mb-2 text-sm font-semibold text-neutral-900">
-                Recent movements
-              </h2>
-              <div className="overflow-hidden rounded-md border border-neutral-200 bg-white">
+            <Card padding="lg">
+              <CardHeader title="Adjust stock" description="Movements are recorded in the audit log." />
+              <form onSubmit={(e) => void submit(e)} className="space-y-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <label className="flex flex-col gap-1 text-xs font-medium uppercase tracking-wide text-text-subtle">
+                    Delta (+/-)
+                    <input
+                      type="number"
+                      value={delta}
+                      onChange={(e) => setDelta(Number(e.target.value))}
+                      className={inputCls}
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1 text-xs font-medium uppercase tracking-wide text-text-subtle">
+                    Reason (required)
+                    <input
+                      type="text"
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      className={inputCls}
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1 text-xs font-medium uppercase tracking-wide text-text-subtle">
+                    New threshold (optional)
+                    <input
+                      type="number"
+                      value={threshold}
+                      onChange={(e) => setThreshold(e.target.value)}
+                      className={inputCls}
+                    />
+                  </label>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Button type="submit" disabled={adjusting}>
+                    {adjusting ? "Saving…" : "Apply adjustment"}
+                  </Button>
+                  {errMsg && <p className="text-sm text-danger">{errMsg}</p>}
+                  {success && <p className="text-sm text-success">{success}</p>}
+                </div>
+              </form>
+            </Card>
+
+            <Card padding="lg">
+              <CardHeader title="Recent movements" />
+              <div className="overflow-hidden rounded-md border border-border">
                 <table className="w-full text-sm">
-                  <thead className="bg-neutral-50 text-left text-xs uppercase tracking-wide text-neutral-500">
+                  <thead className="bg-surface-muted text-left text-xs font-semibold uppercase tracking-wide text-text-subtle">
                     <tr>
                       <th className="px-3 py-2">When</th>
                       <th className="px-3 py-2 text-right">Delta</th>
@@ -137,27 +141,27 @@ export function InventoryDetailPage() {
                       <th className="px-3 py-2">Reservation</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-neutral-100">
+                  <tbody className="divide-y divide-border">
                     {data.movements.length === 0 && (
                       <tr>
-                        <td colSpan={4} className="px-3 py-3 text-center text-neutral-500">
+                        <td colSpan={4} className="px-3 py-3 text-center text-text-subtle">
                           No movements yet.
                         </td>
                       </tr>
                     )}
                     {data.movements.map((m) => (
                       <tr key={m.id}>
-                        <td className="px-3 py-2 text-xs text-neutral-500">
+                        <td className="px-3 py-2 text-xs text-text-subtle">
                           {new Date(m.occurredAt).toLocaleString()}
                         </td>
                         <td
-                          className={`px-3 py-2 text-right font-semibold ${m.delta < 0 ? "text-red-700" : "text-emerald-700"}`}
+                          className={`px-3 py-2 text-right font-semibold ${m.delta < 0 ? "text-danger" : "text-success"}`}
                         >
                           {m.delta > 0 ? "+" : ""}
                           {m.delta}
                         </td>
-                        <td className="px-3 py-2">{m.reason}</td>
-                        <td className="px-3 py-2 font-mono text-xs">
+                        <td className="px-3 py-2 text-text">{m.reason}</td>
+                        <td className="px-3 py-2 font-mono text-xs text-text-muted">
                           {m.reservationId ?? "—"}
                         </td>
                       </tr>
@@ -165,15 +169,13 @@ export function InventoryDetailPage() {
                   </tbody>
                 </table>
               </div>
-            </section>
+            </Card>
 
-            <section>
-              <h2 className="mb-2 text-sm font-semibold text-neutral-900">
-                Active reservations
-              </h2>
-              <div className="overflow-hidden rounded-md border border-neutral-200 bg-white">
+            <Card padding="lg">
+              <CardHeader title="Active reservations" />
+              <div className="overflow-hidden rounded-md border border-border">
                 <table className="w-full text-sm">
-                  <thead className="bg-neutral-50 text-left text-xs uppercase tracking-wide text-neutral-500">
+                  <thead className="bg-surface-muted text-left text-xs font-semibold uppercase tracking-wide text-text-subtle">
                     <tr>
                       <th className="px-3 py-2">Reservation</th>
                       <th className="px-3 py-2">Order</th>
@@ -181,20 +183,20 @@ export function InventoryDetailPage() {
                       <th className="px-3 py-2">Expires</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-neutral-100">
+                  <tbody className="divide-y divide-border">
                     {data.reservations.length === 0 && (
                       <tr>
-                        <td colSpan={4} className="px-3 py-3 text-center text-neutral-500">
+                        <td colSpan={4} className="px-3 py-3 text-center text-text-subtle">
                           No active reservations.
                         </td>
                       </tr>
                     )}
                     {data.reservations.map((r) => (
                       <tr key={r.id}>
-                        <td className="px-3 py-2 font-mono text-xs">{r.id}</td>
-                        <td className="px-3 py-2 font-mono text-xs">{r.orderId}</td>
-                        <td className="px-3 py-2 text-right">{r.qty}</td>
-                        <td className="px-3 py-2 text-xs text-neutral-500">
+                        <td className="px-3 py-2 font-mono text-xs text-text-muted">{r.id}</td>
+                        <td className="px-3 py-2 font-mono text-xs text-text-muted">{r.orderId}</td>
+                        <td className="px-3 py-2 text-right text-text">{r.qty}</td>
+                        <td className="px-3 py-2 text-xs text-text-subtle">
                           {new Date(r.expiresAt).toLocaleString()}
                         </td>
                       </tr>
@@ -202,10 +204,10 @@ export function InventoryDetailPage() {
                   </tbody>
                 </table>
               </div>
-            </section>
+            </Card>
           </>
         )}
-      </section>
+      </div>
     </AdminShell>
   );
 }
@@ -221,9 +223,11 @@ function Stat({
 }) {
   return (
     <div>
-      <p className="text-xs uppercase tracking-wide text-neutral-500">{label}</p>
+      <p className="text-xs font-medium uppercase tracking-wide text-text-subtle">
+        {label}
+      </p>
       <p
-        className={`text-lg ${highlight ? "font-bold text-neutral-900" : "font-medium text-neutral-800"}`}
+        className={`mt-1 ${highlight ? "text-2xl font-bold text-primary" : "text-lg font-medium text-text"}`}
       >
         {value}
       </p>

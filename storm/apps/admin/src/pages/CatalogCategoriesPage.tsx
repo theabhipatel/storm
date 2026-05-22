@@ -1,6 +1,9 @@
+import { GripVertical, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 
-import { AdminShell } from "../components/AdminShell";
+import { AdminShell } from "../components/shell/AdminShell";
+import { PageHeader } from "../components/shell/PageHeader";
+import { Card, CardHeader } from "../components/ui/Card";
 import {
   useCreateCategoryMutation,
   useDeleteCategoryMutation,
@@ -87,63 +90,68 @@ export function CatalogCategoriesPage() {
   }
 
   return (
-    <AdminShell title="Catalog · Categories">
+    <AdminShell>
+      <PageHeader
+        breadcrumbs={[{ label: "Catalog" }, { label: "Categories" }]}
+        title="Categories"
+        subtitle="Organize the catalog into a hierarchy. Drag siblings to reorder."
+      />
       <div className="space-y-4">
         {error && (
-          <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+          <div className="rounded-md border border-danger/30 bg-danger-soft p-3 text-sm text-danger">
             {error}
           </div>
         )}
 
-        <form
-          onSubmit={add}
-          className="flex flex-wrap items-end gap-2 rounded-md border border-neutral-200 bg-white p-3 shadow-sm"
-        >
-          <div className="flex-1 min-w-[200px]">
-            <label className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-              New category
-            </label>
-            <input
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              placeholder="e.g. Smartphones"
-              required
-              className="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-              Parent
-            </label>
-            <select
-              value={newParent}
-              onChange={(e) => setNewParent(e.target.value)}
-              className="mt-1 block w-56 rounded-md border border-neutral-300 px-3 py-2 text-sm"
-            >
-              <option value="">— root —</option>
-              {flatten(data?.items ?? []).map((n) => (
-                <option key={n.id} value={n.id}>
-                  {n.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <button
-            type="submit"
-            className="rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white"
+        <Card padding="md">
+          <form
+            onSubmit={add}
+            className="flex flex-wrap items-end gap-2"
           >
-            Add
-          </button>
-        </form>
+            <div className="min-w-[200px] flex-1">
+              <label className="text-xs font-medium uppercase tracking-wide text-text-subtle">
+                New category
+              </label>
+              <input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="e.g. Smartphones"
+                required
+                className="mt-1 block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium uppercase tracking-wide text-text-subtle">
+                Parent
+              </label>
+              <select
+                value={newParent}
+                onChange={(e) => setNewParent(e.target.value)}
+                className="mt-1 block w-56 rounded-md border border-border bg-surface px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
+              >
+                <option value="">— root —</option>
+                {flatten(data?.items ?? []).map((n) => (
+                  <option key={n.id} value={n.id}>
+                    {n.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button
+              type="submit"
+              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary-hover"
+            >
+              Add category
+            </button>
+          </form>
+        </Card>
 
-        <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
-          {isFetching && <p className="text-sm text-neutral-500">Loading…</p>}
+        <Card padding="lg">
+          <CardHeader title="Category tree" />
+          {isFetching && <p className="text-sm text-text-subtle">Loading…</p>}
           {data && data.items.length === 0 && (
-            <p className="text-sm text-neutral-500">No categories yet.</p>
+            <p className="text-sm text-text-subtle">No categories yet.</p>
           )}
-          <p className="mb-2 text-xs text-neutral-500">
-            Drag a category onto a sibling to reorder.
-          </p>
           <ul className="space-y-1">
             {(data?.items ?? []).map((n) => (
               <Node
@@ -158,7 +166,7 @@ export function CatalogCategoriesPage() {
               />
             ))}
           </ul>
-        </div>
+        </Card>
       </div>
     </AdminShell>
   );
@@ -200,25 +208,27 @@ function Node({
           onDrop(node.id, e.clientY < half ? "before" : "after");
         }}
         className={
-          "flex cursor-move items-center gap-2 rounded-md px-2 py-1 hover:bg-neutral-50 " +
+          "flex cursor-move items-center gap-2 rounded-md px-2 py-1.5 transition hover:bg-surface-muted " +
           (dragId === node.id ? "opacity-50" : "")
         }
-        style={{ paddingLeft: `${depth * 16}px` }}
+        style={{ paddingLeft: `${8 + depth * 16}px` }}
       >
-        <span className="text-neutral-400">⋮⋮</span>
-        <span className="font-medium text-neutral-900">{node.name}</span>
-        <span className="font-mono text-xs text-neutral-500">/{node.slug}</span>
+        <GripVertical className="h-3.5 w-3.5 text-text-subtle" aria-hidden />
+        <span className="font-medium text-text">{node.name}</span>
+        <span className="font-mono text-xs text-text-subtle">/{node.slug}</span>
         <span className="ml-auto flex gap-1 text-xs">
           <button
             onClick={() => onRename(node.id)}
-            className="rounded border border-neutral-300 px-2 py-0.5"
+            className="inline-flex items-center gap-1 rounded-md border border-border bg-surface px-2 py-1 text-text-muted transition hover:bg-surface-muted hover:text-text"
           >
+            <Pencil className="h-3 w-3" aria-hidden />
             Rename
           </button>
           <button
             onClick={() => onDelete(node.id)}
-            className="rounded border border-red-300 px-2 py-0.5 text-red-700 hover:bg-red-50"
+            className="inline-flex items-center gap-1 rounded-md border border-danger/40 px-2 py-1 text-danger transition hover:bg-danger-soft"
           >
+            <Trash2 className="h-3 w-3" aria-hidden />
             Delete
           </button>
         </span>

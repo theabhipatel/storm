@@ -1,8 +1,11 @@
+import type { OrderStatus } from "@storm/contracts";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import type { OrderStatus } from "@storm/contracts";
 
-import { AdminShell } from "../components/AdminShell";
+import { AdminShell } from "../components/shell/AdminShell";
+import { PageHeader } from "../components/shell/PageHeader";
+import { Button } from "../components/ui/Button";
+import { Card, CardHeader } from "../components/ui/Card";
 import { OrderStatusBadge } from "../features/orders/OrderStatusBadge";
 import {
   useCancelAdminOrderMutation,
@@ -10,6 +13,9 @@ import {
   useUpdateOrderStatusMutation,
 } from "../features/orders/orders.api";
 import { formatINR } from "../lib/format";
+
+const inputCls =
+  "rounded-md border border-border bg-surface px-3 py-1.5 text-sm shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30";
 
 function formatIst(iso: string | null | undefined): string {
   if (!iso) return "—";
@@ -35,15 +41,17 @@ export function OrderDetailPage() {
 
   if (isLoading) {
     return (
-      <AdminShell title="Order">
-        <p className="text-sm text-neutral-500">Loading…</p>
+      <AdminShell>
+        <PageHeader breadcrumbs={[{ label: "Orders", to: "/orders" }]} title="Order" />
+        <p className="text-sm text-text-subtle">Loading…</p>
       </AdminShell>
     );
   }
   if (isError || !data) {
     return (
-      <AdminShell title="Order">
-        <p className="text-sm text-red-700">Order not found.</p>
+      <AdminShell>
+        <PageHeader breadcrumbs={[{ label: "Orders", to: "/orders" }]} title="Order" />
+        <p className="text-sm text-danger">Order not found.</p>
       </AdminShell>
     );
   }
@@ -93,48 +101,49 @@ export function OrderDetailPage() {
   const canCancel = (data.allowedTransitions ?? []).includes("cancelled");
 
   return (
-    <AdminShell title={`Order #${orderId.slice(0, 8)}`}>
-      <section className="space-y-6">
-        <header className="flex items-start justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-neutral-900">
-              Order #{orderId.slice(0, 8)}
-            </h1>
-            <p className="text-xs text-neutral-500 font-mono">{orderId}</p>
-            <p className="mt-1 text-sm text-neutral-700">
-              Placed by{" "}
-              <Link
-                to={`/users/${data.userId}`}
-                className="text-neutral-900 underline-offset-2 hover:underline"
-              >
-                {data.customerName} ({data.customerEmail})
-              </Link>{" "}
-              on {formatIst(data.createdAt)} IST
-            </p>
-          </div>
-          <OrderStatusBadge status={data.status as OrderStatus} />
-        </header>
+    <AdminShell>
+      <PageHeader
+        breadcrumbs={[
+          { label: "Orders", to: "/orders" },
+          { label: `#${orderId.slice(0, 8)}` },
+        ]}
+        title={`Order #${orderId.slice(0, 8)}`}
+        subtitle={
+          <>
+            Placed by{" "}
+            <Link
+              to={`/users/${data.userId}`}
+              className="font-medium text-primary hover:underline"
+            >
+              {data.customerName} ({data.customerEmail})
+            </Link>{" "}
+            on {formatIst(data.createdAt)} IST · <span className="font-mono text-xs">{orderId}</span>
+          </>
+        }
+        actions={<OrderStatusBadge status={data.status as OrderStatus} />}
+      />
 
+      <div className="space-y-4">
         {error && (
-          <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+          <p className="rounded-md border border-danger/30 bg-danger-soft px-3 py-2 text-sm text-danger">
             {error}
           </p>
         )}
 
-        <section className="rounded-md border border-neutral-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-neutral-900">Status transition</h2>
+        <Card padding="lg">
+          <CardHeader title="Status transition" />
           {nonCancelTransitions.length === 0 ? (
-            <p className="mt-2 text-sm text-neutral-500">
+            <p className="text-sm text-text-subtle">
               No further transitions available from this state.
             </p>
           ) : (
-            <div className="mt-3 flex flex-wrap items-end gap-2">
-              <label className="flex flex-col text-xs text-neutral-600">
+            <div className="flex flex-wrap items-end gap-2">
+              <label className="flex flex-col gap-1 text-xs font-medium uppercase tracking-wide text-text-subtle">
                 Next status
                 <select
                   value={selectedNext}
                   onChange={(e) => setSelectedNext(e.target.value as OrderStatus | "")}
-                  className="mt-1 rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
+                  className={inputCls}
                 >
                   <option value="">Select…</option>
                   {nonCancelTransitions.map((s) => (
@@ -144,250 +153,237 @@ export function OrderDetailPage() {
                   ))}
                 </select>
               </label>
-              <label className="flex flex-1 flex-col text-xs text-neutral-600">
+              <label className="flex flex-1 flex-col gap-1 text-xs font-medium uppercase tracking-wide text-text-subtle">
                 Note (optional)
                 <input
                   type="text"
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   maxLength={500}
-                  className="mt-1 rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
+                  className={inputCls}
                 />
               </label>
-              <button
-                type="button"
+              <Button
                 disabled={!selectedNext || updateState.isLoading}
                 onClick={() => setShowStatusConfirm(true)}
-                className="rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
               >
                 {updateState.isLoading ? "Updating…" : "Update status"}
-              </button>
+              </Button>
             </div>
           )}
           {canCancel && (
-            <div className="mt-4 border-t border-neutral-100 pt-3">
-              <button
-                type="button"
-                onClick={() => setShowCancel(true)}
-                className="rounded-md border border-red-300 px-3 py-1.5 text-sm font-semibold text-red-700 hover:bg-red-50"
-              >
+            <div className="mt-4 border-t border-border pt-3">
+              <Button variant="danger" onClick={() => setShowCancel(true)}>
                 Cancel order
-              </button>
+              </Button>
             </div>
           )}
-        </section>
+        </Card>
 
-        <section className="rounded-md border border-neutral-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-neutral-900">Items</h2>
-          <table className="mt-3 w-full text-sm">
-            <thead className="text-left text-xs uppercase tracking-wide text-neutral-500">
+        <Card padding="lg">
+          <CardHeader title="Items" />
+          <table className="w-full text-sm">
+            <thead className="text-left text-xs font-semibold uppercase tracking-wide text-text-subtle">
               <tr>
-                <th className="py-1">SKU</th>
+                <th className="py-2">SKU</th>
                 <th>Name</th>
                 <th className="text-right">Qty</th>
                 <th className="text-right">Unit</th>
                 <th className="text-right">Total</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-100">
+            <tbody className="divide-y divide-border">
               {data.items.map((it) => (
                 <tr key={it.id}>
-                  <td className="py-2 font-mono text-xs">{it.sku}</td>
-                  <td className="py-2">{it.name}</td>
-                  <td className="py-2 text-right">{it.qty}</td>
-                  <td className="py-2 text-right">{formatINR(it.unitPricePaise, data.currency)}</td>
-                  <td className="py-2 text-right font-semibold">
+                  <td className="py-2 font-mono text-xs text-text-muted">{it.sku}</td>
+                  <td className="py-2 text-text">{it.name}</td>
+                  <td className="py-2 text-right text-text">{it.qty}</td>
+                  <td className="py-2 text-right text-text-muted">
+                    {formatINR(it.unitPricePaise, data.currency)}
+                  </td>
+                  <td className="py-2 text-right font-semibold text-text">
                     {formatINR(it.lineTotalPaise, data.currency)}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <dl className="mt-3 ml-auto grid w-fit grid-cols-2 gap-x-4 gap-y-1 text-sm">
-            <dt className="text-neutral-600">Subtotal</dt>
-            <dd className="text-right">{formatINR(data.subtotalPaise, data.currency)}</dd>
-            <dt className="text-neutral-600">Shipping</dt>
-            <dd className="text-right">{formatINR(data.shippingFeePaise, data.currency)}</dd>
-            <dt className="font-semibold text-neutral-900">Total</dt>
-            <dd className="text-right font-semibold text-neutral-900">
+          <dl className="ml-auto mt-4 grid w-fit grid-cols-2 gap-x-6 gap-y-1 border-t border-border pt-3 text-sm">
+            <dt className="text-text-muted">Subtotal</dt>
+            <dd className="text-right text-text">{formatINR(data.subtotalPaise, data.currency)}</dd>
+            <dt className="text-text-muted">Shipping</dt>
+            <dd className="text-right text-text">{formatINR(data.shippingFeePaise, data.currency)}</dd>
+            <dt className="font-semibold text-text">Total</dt>
+            <dd className="text-right font-semibold text-text">
               {formatINR(data.totalPaise, data.currency)}
             </dd>
           </dl>
-        </section>
+        </Card>
 
-        <section className="rounded-md border border-neutral-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-neutral-900">Delivery address</h2>
-          <p className="mt-2 text-sm text-neutral-700">
-            <span className="font-medium text-neutral-900">{data.address.fullName}</span>
-            <br />
-            {data.address.line1}
-            {data.address.line2 ? `, ${data.address.line2}` : ""}
-            <br />
-            {data.address.city}, {data.address.state} {data.address.pincode}
-            <br />
-            <span className="text-neutral-500">{data.address.phone}</span>
-          </p>
-        </section>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <Card padding="lg">
+            <CardHeader title="Delivery address" />
+            <p className="text-sm text-text">
+              <span className="font-medium">{data.address.fullName}</span>
+              <br />
+              {data.address.line1}
+              {data.address.line2 ? `, ${data.address.line2}` : ""}
+              <br />
+              {data.address.city}, {data.address.state} {data.address.pincode}
+              <br />
+              <span className="text-text-subtle">{data.address.phone}</span>
+            </p>
+          </Card>
 
-        <section className="rounded-md border border-neutral-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-neutral-900">Payment</h2>
-          {data.payment ? (
-            <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-              <dt className="text-neutral-600">Provider</dt>
-              <dd>Razorpay</dd>
-              <dt className="text-neutral-600">Razorpay order ID</dt>
-              <dd className="font-mono text-xs">{data.payment.razorpayOrderId}</dd>
-              <dt className="text-neutral-600">Razorpay payment ID</dt>
-              <dd className="font-mono text-xs">{data.payment.razorpayPaymentId ?? "—"}</dd>
-              <dt className="text-neutral-600">Status</dt>
-              <dd>{data.payment.status}</dd>
-              <dt className="text-neutral-600">Amount</dt>
-              <dd>{formatINR(data.payment.amountPaise, data.payment.currency)}</dd>
-              <dt className="text-neutral-600">Method</dt>
-              <dd>{data.payment.method ?? "—"}</dd>
-              <dt className="text-neutral-600">Captured at</dt>
-              <dd>{formatIst(data.payment.capturedAt)}</dd>
-              {data.payment.failureReason ? (
-                <>
-                  <dt className="text-neutral-600">Failure</dt>
-                  <dd>{data.payment.failureReason}</dd>
-                </>
-              ) : null}
-            </dl>
-          ) : (
-            <p className="mt-2 text-sm text-neutral-500">No payment record found.</p>
-          )}
-        </section>
+          <Card padding="lg">
+            <CardHeader title="Payment" />
+            {data.payment ? (
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                <dt className="text-text-muted">Provider</dt>
+                <dd className="text-text">Razorpay</dd>
+                <dt className="text-text-muted">Order ID</dt>
+                <dd className="font-mono text-xs text-text">{data.payment.razorpayOrderId}</dd>
+                <dt className="text-text-muted">Payment ID</dt>
+                <dd className="font-mono text-xs text-text">{data.payment.razorpayPaymentId ?? "—"}</dd>
+                <dt className="text-text-muted">Status</dt>
+                <dd className="text-text">{data.payment.status}</dd>
+                <dt className="text-text-muted">Amount</dt>
+                <dd className="text-text">{formatINR(data.payment.amountPaise, data.payment.currency)}</dd>
+                <dt className="text-text-muted">Method</dt>
+                <dd className="text-text">{data.payment.method ?? "—"}</dd>
+                <dt className="text-text-muted">Captured at</dt>
+                <dd className="text-text">{formatIst(data.payment.capturedAt)}</dd>
+                {data.payment.failureReason ? (
+                  <>
+                    <dt className="text-text-muted">Failure</dt>
+                    <dd className="text-danger">{data.payment.failureReason}</dd>
+                  </>
+                ) : null}
+              </dl>
+            ) : (
+              <p className="text-sm text-text-subtle">No payment record found.</p>
+            )}
+          </Card>
+        </div>
 
-        <section className="rounded-md border border-neutral-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-neutral-900">Inventory reservations</h2>
+        <Card padding="lg">
+          <CardHeader title="Inventory reservations" />
           {data.reservations.length === 0 ? (
-            <p className="mt-2 text-sm text-neutral-500">No reservation records.</p>
+            <p className="text-sm text-text-subtle">No reservation records.</p>
           ) : (
-            <table className="mt-3 w-full text-sm">
-              <thead className="text-left text-xs uppercase tracking-wide text-neutral-500">
+            <table className="w-full text-sm">
+              <thead className="text-left text-xs font-semibold uppercase tracking-wide text-text-subtle">
                 <tr>
-                  <th className="py-1">SKU</th>
+                  <th className="py-2">SKU</th>
                   <th className="text-right">Qty</th>
                   <th>Status</th>
                   <th>Created</th>
                   <th>Expires</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-100">
+              <tbody className="divide-y divide-border">
                 {data.reservations.map((r) => (
                   <tr key={r.id}>
-                    <td className="py-2 font-mono text-xs">{r.sku}</td>
-                    <td className="py-2 text-right">{r.qty}</td>
-                    <td className="py-2">{r.status}</td>
-                    <td className="py-2 text-xs text-neutral-500">{formatIst(r.createdAt)}</td>
-                    <td className="py-2 text-xs text-neutral-500">{formatIst(r.expiresAt)}</td>
+                    <td className="py-2 font-mono text-xs text-text-muted">{r.sku}</td>
+                    <td className="py-2 text-right text-text">{r.qty}</td>
+                    <td className="py-2 text-text">{r.status}</td>
+                    <td className="py-2 text-xs text-text-subtle">{formatIst(r.createdAt)}</td>
+                    <td className="py-2 text-xs text-text-subtle">{formatIst(r.expiresAt)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           )}
-        </section>
+        </Card>
 
-        <section className="rounded-md border border-neutral-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-neutral-900">Audit trail</h2>
+        <Card padding="lg">
+          <CardHeader title="Audit trail" />
           {data.history.length === 0 ? (
-            <p className="mt-2 text-sm text-neutral-500">No history recorded.</p>
+            <p className="text-sm text-text-subtle">No history recorded.</p>
           ) : (
-            <ol className="mt-3 space-y-2 text-sm">
+            <ol className="space-y-2 text-sm">
               {data.history.map((h) => (
-                <li key={h.id} className="flex justify-between gap-4">
+                <li key={h.id} className="flex justify-between gap-4 border-b border-border pb-2 last:border-0">
                   <div>
-                    <p className="font-medium text-neutral-900">
+                    <p className="font-medium text-text">
                       {(h.fromStatus ?? "—") + " → " + h.toStatus}
                     </p>
-                    <p className="text-xs text-neutral-500">
+                    <p className="text-xs text-text-subtle">
                       by {h.changedBy}
                       {h.reason ? ` · ${h.reason}` : ""}
                     </p>
                   </div>
-                  <span className="whitespace-nowrap text-xs text-neutral-500">
+                  <span className="whitespace-nowrap text-xs text-text-subtle">
                     {formatIst(h.changedAt)} IST
                   </span>
                 </li>
               ))}
             </ol>
           )}
-        </section>
+        </Card>
 
         {showStatusConfirm && selectedNext ? (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <div className="w-full max-w-md rounded-md bg-white p-5 shadow-lg">
-              <h4 className="text-base font-semibold text-neutral-900">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay/40 p-4">
+            <div className="w-full max-w-md rounded-lg bg-surface p-6 shadow-elevated">
+              <h4 className="text-base font-semibold text-text">
                 Move order to {selectedNext}?
               </h4>
-              <p className="mt-1 text-sm text-neutral-600">
+              <p className="mt-1 text-sm text-text-muted">
                 The customer will be notified by email and SMS.
                 {note.trim() ? ` Note: "${note.trim()}"` : ""}
               </p>
-              <div className="mt-4 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowStatusConfirm(false)}
-                  className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm font-semibold text-neutral-800"
-                >
+              <div className="mt-5 flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowStatusConfirm(false)}>
                   Back
-                </button>
-                <button
-                  type="button"
-                  disabled={updateState.isLoading}
-                  onClick={handleUpdate}
-                  className="rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
-                >
+                </Button>
+                <Button disabled={updateState.isLoading} onClick={handleUpdate}>
                   {updateState.isLoading ? "Updating…" : "Confirm update"}
-                </button>
+                </Button>
               </div>
             </div>
           </div>
         ) : null}
 
         {showCancel ? (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <div className="w-full max-w-md rounded-md bg-white p-5 shadow-lg">
-              <h4 className="text-base font-semibold text-neutral-900">Cancel this order?</h4>
-              <p className="mt-1 text-sm text-neutral-600">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay/40 p-4">
+            <div className="w-full max-w-md rounded-lg bg-surface p-6 shadow-elevated">
+              <h4 className="text-base font-semibold text-text">Cancel this order?</h4>
+              <p className="mt-1 text-sm text-text-muted">
                 Customer will be notified of the cancellation and the reason.
               </p>
-              <label className="mt-3 block text-sm font-medium text-neutral-700">
+              <label className="mt-3 block text-sm font-medium text-text">
                 Reason (required)
                 <textarea
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
                   maxLength={500}
                   rows={3}
-                  className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30"
                   placeholder="Why is this order being cancelled?"
                 />
               </label>
-              <div className="mt-4 flex justify-end gap-2">
-                <button
-                  type="button"
+              <div className="mt-5 flex justify-end gap-2">
+                <Button
+                  variant="outline"
                   onClick={() => {
                     setShowCancel(false);
                     setCancelReason("");
                   }}
-                  className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm font-semibold text-neutral-800"
                 >
                   Back
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  variant="danger"
                   disabled={cancelState.isLoading || !cancelReason.trim()}
                   onClick={handleCancel}
-                  className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
                 >
                   {cancelState.isLoading ? "Cancelling…" : "Cancel order"}
-                </button>
+                </Button>
               </div>
             </div>
           </div>
         ) : null}
-      </section>
+      </div>
     </AdminShell>
   );
 }

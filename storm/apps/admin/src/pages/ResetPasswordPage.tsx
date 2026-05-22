@@ -1,10 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 
-import { AuthShell } from "../components/AuthShell";
-import { Button, Field, FormError } from "../components/Field";
+import { Field, FormError } from "../components/Field";
+import { AuthShell } from "../components/shell/AuthShell";
+import { Button } from "../components/ui/Button";
 import { useConfirmPasswordReset } from "../features/auth/auth.hooks";
 
 const Schema = z
@@ -32,7 +33,14 @@ export function ResetPasswordPage() {
   if (!token) {
     return (
       <AuthShell title="Missing token">
-        <p className="text-sm text-neutral-600">Request a new reset email.</p>
+        <p className="text-sm text-text-muted">
+          The reset link is missing or invalid. Request a new reset email.
+        </p>
+        <p className="mt-4 text-center text-sm">
+          <Link to="/forgot-password" className="font-medium text-primary hover:underline">
+            Request a new link
+          </Link>
+        </p>
       </AuthShell>
     );
   }
@@ -47,7 +55,7 @@ export function ResetPasswordPage() {
   });
 
   return (
-    <AuthShell title="Choose a new password">
+    <AuthShell title="Choose a new password" subtitle="Pick something at least 12 characters.">
       <form onSubmit={onSubmit} className="space-y-4">
         <Field
           label="New password"
@@ -66,8 +74,8 @@ export function ResetPasswordPage() {
         {error ? (
           <FormError>{(error as { message?: string }).message ?? "Reset failed."}</FormError>
         ) : null}
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? "Saving..." : "Save new password"}
+        <Button type="submit" fullWidth size="lg" disabled={isLoading}>
+          {isLoading ? "Saving…" : "Save new password"}
         </Button>
       </form>
     </AuthShell>

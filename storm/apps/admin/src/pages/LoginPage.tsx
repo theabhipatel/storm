@@ -2,12 +2,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 
-import { AuthShell } from "../components/AuthShell";
-import { Button, Field, FormError } from "../components/Field";
-import { useLogout, useLogin } from "../features/auth/auth.hooks";
+import { Field, FormError } from "../components/Field";
+import { AuthShell } from "../components/shell/AuthShell";
+import { Button } from "../components/ui/Button";
+import { useLogin, useLogout } from "../features/auth/auth.hooks";
 import { setCurrentUser } from "../features/auth/auth.slice";
 
 const Schema = z.object({
@@ -33,8 +34,6 @@ export function LoginPage() {
     try {
       const res = await login(values).unwrap();
       if (res.user.role !== "admin") {
-        // Customer credentials are valid but not allowed here. Roll back the
-        // session by calling logout so the server-side state is clean.
         setRoleError("Admin access only.");
         dispatch(setCurrentUser(null));
         await logout();
@@ -56,12 +55,13 @@ export function LoginPage() {
   })();
 
   return (
-    <AuthShell title="Admin login">
+    <AuthShell title="Sign in" subtitle="Enter your admin credentials to continue.">
       <form onSubmit={onSubmit} className="space-y-4">
         <Field
           label="Email"
           type="email"
           autoComplete="email"
+          placeholder="you@company.com"
           {...register("email")}
           error={errors.email?.message}
         />
@@ -69,18 +69,19 @@ export function LoginPage() {
           label="Password"
           type="password"
           autoComplete="current-password"
+          placeholder="••••••••"
           {...register("password")}
           error={errors.password?.message}
         />
         {roleError ? <FormError>{roleError}</FormError> : null}
         {apiMsg ? <FormError>{apiMsg}</FormError> : null}
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? "Signing in..." : "Log in"}
+        <Button type="submit" fullWidth size="lg" disabled={isLoading}>
+          {isLoading ? "Signing in…" : "Sign in"}
         </Button>
-        <p className="text-center text-sm">
-          <a href="/forgot-password" className="text-neutral-700 underline">
-            Forgot password?
-          </a>
+        <p className="text-center text-sm text-text-muted">
+          <Link to="/forgot-password" className="font-medium text-primary hover:underline">
+            Forgot your password?
+          </Link>
         </p>
       </form>
     </AuthShell>

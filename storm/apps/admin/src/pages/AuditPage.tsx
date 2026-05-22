@@ -1,9 +1,17 @@
+import { Info } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { AdminShell } from "../components/AdminShell";
+import { AdminShell } from "../components/shell/AdminShell";
+import { PageHeader } from "../components/shell/PageHeader";
+import { Badge } from "../components/ui/Badge";
+import { Button } from "../components/ui/Button";
+import { Card } from "../components/ui/Card";
 import { useGetAuditFeedQuery } from "../features/audit/audit.api";
 import { formatDateIST } from "../lib/format";
+
+const inputCls =
+  "rounded-md border border-border bg-surface px-3 py-1.5 text-sm shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/30";
 
 export function AuditPage() {
   const [actor, setActor] = useState("");
@@ -23,111 +31,132 @@ export function AuditPage() {
   const { data, isFetching } = useGetAuditFeedQuery(args);
 
   return (
-    <AdminShell title="Audit log">
+    <AdminShell>
+      <PageHeader
+        breadcrumbs={[{ label: "Audit log" }]}
+        title="Audit log"
+        subtitle="Order status transitions and other operator actions."
+      />
+
       <div className="space-y-4">
-        <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-          Stage 1: feed shows order status transitions only. Cross-service
-          audit (user changes, admin actions) lands in Stage 2.
+        <div className="flex items-start gap-2 rounded-md border border-warning/30 bg-warning-soft px-3 py-2 text-xs text-warning-foreground">
+          <Info className="mt-0.5 h-4 w-4 flex-shrink-0" aria-hidden />
+          Stage 1: feed shows order status transitions only. Cross-service audit
+          (user changes, admin actions) lands in Stage 2.
         </div>
 
-        <div className="flex flex-wrap items-end gap-3 rounded-md border border-neutral-200 bg-white p-3 text-xs">
-          <label className="flex flex-col">
-            <span className="font-semibold text-neutral-700">Actor</span>
-            <input
-              value={actor}
-              onChange={(e) => setActor(e.target.value)}
-              placeholder="user id or 'system'"
-              className="mt-1 rounded border border-neutral-300 px-2 py-1"
-            />
-          </label>
-          <label className="flex flex-col">
-            <span className="font-semibold text-neutral-700">Action</span>
-            <input
-              value={action}
-              onChange={(e) => setAction(e.target.value)}
-              placeholder="e.g. shipped, cancelled"
-              className="mt-1 rounded border border-neutral-300 px-2 py-1"
-            />
-          </label>
-          <label className="flex flex-col">
-            <span className="font-semibold text-neutral-700">From</span>
-            <input
-              type="date"
-              value={from}
-              onChange={(e) => setFrom(e.target.value)}
-              className="mt-1 rounded border border-neutral-300 px-2 py-1"
-            />
-          </label>
-          <label className="flex flex-col">
-            <span className="font-semibold text-neutral-700">To</span>
-            <input
-              type="date"
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-              className="mt-1 rounded border border-neutral-300 px-2 py-1"
-            />
-          </label>
-          <button
-            type="button"
-            onClick={() => {
-              setActor("");
-              setAction("");
-              setFrom("");
-              setTo("");
-            }}
-            className="ml-auto rounded-md border border-neutral-300 px-3 py-1.5 font-medium text-neutral-700 hover:border-neutral-400"
-          >
-            Reset
-          </button>
-        </div>
+        <Card padding="md">
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="flex flex-col gap-1 text-xs font-medium uppercase tracking-wide text-text-subtle">
+              Actor
+              <input
+                value={actor}
+                onChange={(e) => setActor(e.target.value)}
+                placeholder="user id or 'system'"
+                className={inputCls}
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-xs font-medium uppercase tracking-wide text-text-subtle">
+              Action
+              <input
+                value={action}
+                onChange={(e) => setAction(e.target.value)}
+                placeholder="e.g. shipped, cancelled"
+                className={inputCls}
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-xs font-medium uppercase tracking-wide text-text-subtle">
+              From
+              <input
+                type="date"
+                value={from}
+                onChange={(e) => setFrom(e.target.value)}
+                className={inputCls}
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-xs font-medium uppercase tracking-wide text-text-subtle">
+              To
+              <input
+                type="date"
+                value={to}
+                onChange={(e) => setTo(e.target.value)}
+                className={inputCls}
+              />
+            </label>
+            <Button
+              variant="outline"
+              className="ml-auto"
+              onClick={() => {
+                setActor("");
+                setAction("");
+                setFrom("");
+                setTo("");
+              }}
+            >
+              Reset
+            </Button>
+          </div>
+        </Card>
 
-        <div className="overflow-hidden rounded-md border border-neutral-200 bg-white">
+        <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-card">
           <table className="min-w-full text-sm">
-            <thead className="bg-neutral-50 text-left text-xs uppercase tracking-wide text-neutral-500">
+            <thead className="border-b border-border bg-surface-muted text-left text-xs font-semibold uppercase tracking-wide text-text-subtle">
               <tr>
-                <th className="px-3 py-2">When</th>
-                <th className="px-3 py-2">Order</th>
-                <th className="px-3 py-2">From → To</th>
-                <th className="px-3 py-2">Actor</th>
-                <th className="px-3 py-2">Reason</th>
+                <th className="px-4 py-3">When</th>
+                <th className="px-4 py-3">Order</th>
+                <th className="px-4 py-3">Transition</th>
+                <th className="px-4 py-3">Actor</th>
+                <th className="px-4 py-3">Reason</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-100">
+            <tbody className="divide-y divide-border">
               {!data || isFetching ? (
                 <tr>
-                  <td colSpan={5} className="px-3 py-6 text-center text-neutral-500">
+                  <td colSpan={5} className="px-3 py-6 text-center text-text-subtle">
                     {isFetching ? "Loading…" : "No data"}
                   </td>
                 </tr>
               ) : data.items.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-3 py-6 text-center text-neutral-500">
+                  <td colSpan={5} className="px-3 py-6 text-center text-text-subtle">
                     No audit entries match these filters.
                   </td>
                 </tr>
               ) : (
                 data.items.map((entry, idx) => (
-                  <tr key={`${entry.orderId}-${entry.changedAt}-${idx}`} className="hover:bg-neutral-50">
-                    <td className="px-3 py-2 align-top">{formatDateIST(entry.changedAt)}</td>
-                    <td className="px-3 py-2 align-top">
-                      <Link to={`/orders/${entry.orderId}`} className="font-medium text-neutral-900 hover:underline">
+                  <tr
+                    key={`${entry.orderId}-${entry.changedAt}-${idx}`}
+                    className="transition hover:bg-surface-muted"
+                  >
+                    <td className="px-4 py-3 align-top text-text">{formatDateIST(entry.changedAt)}</td>
+                    <td className="px-4 py-3 align-top">
+                      <Link
+                        to={`/orders/${entry.orderId}`}
+                        className="font-medium text-primary hover:underline"
+                      >
                         #{entry.orderId.slice(0, 8)}
                       </Link>
                       {entry.customerEmail ? (
-                        <p className="text-xs text-neutral-500">{entry.customerEmail}</p>
+                        <p className="text-xs text-text-subtle">{entry.customerEmail}</p>
                       ) : null}
                     </td>
-                    <td className="px-3 py-2 align-top text-xs">
-                      <span className="rounded bg-neutral-100 px-2 py-0.5 font-medium text-neutral-700">
-                        {entry.fromStatus ?? "—"}
-                      </span>{" "}
-                      →{" "}
-                      <span className="rounded bg-emerald-100 px-2 py-0.5 font-medium text-emerald-800">
-                        {entry.toStatus}
+                    <td className="px-4 py-3 align-top">
+                      <span className="inline-flex items-center gap-2 text-xs">
+                        <Badge variant="neutral" size="sm">
+                          {entry.fromStatus ?? "—"}
+                        </Badge>
+                        <span className="text-text-subtle">→</span>
+                        <Badge variant="soft-success" size="sm">
+                          {entry.toStatus}
+                        </Badge>
                       </span>
                     </td>
-                    <td className="px-3 py-2 align-top font-mono text-xs">{entry.changedBy}</td>
-                    <td className="px-3 py-2 align-top text-xs text-neutral-700">{entry.reason ?? "—"}</td>
+                    <td className="px-4 py-3 align-top font-mono text-xs text-text-muted">
+                      {entry.changedBy}
+                    </td>
+                    <td className="px-4 py-3 align-top text-xs text-text">
+                      {entry.reason ?? "—"}
+                    </td>
                   </tr>
                 ))
               )}

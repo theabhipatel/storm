@@ -1,75 +1,79 @@
+import { CheckCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { AdminShell } from "../components/AdminShell";
+import { AdminShell } from "../components/shell/AdminShell";
+import { PageHeader } from "../components/shell/PageHeader";
 import { useLowStockAlertsQuery } from "../features/inventory/inventory.api";
 
 export function InventoryAlertsPage() {
   const { data, isFetching, error } = useLowStockAlertsQuery();
 
   return (
-    <AdminShell title="Low stock alerts">
-      <section className="space-y-4">
-        <header className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-neutral-900">Low stock alerts</h1>
-          <Link to="/inventory" className="text-sm text-neutral-600 hover:underline">
-            ← Back to inventory
-          </Link>
-        </header>
+    <AdminShell>
+      <PageHeader
+        breadcrumbs={[{ label: "Inventory", to: "/inventory" }, { label: "Low-stock alerts" }]}
+        title="Low-stock alerts"
+        subtitle={
+          data ? `${data.data.length} SKU${data.data.length === 1 ? "" : "s"} at or below threshold.` : undefined
+        }
+      />
 
-        {error && (
-          <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-            Failed to load alerts.
-          </p>
-        )}
+      {error && (
+        <p className="mb-4 rounded-md border border-danger/30 bg-danger-soft px-3 py-2 text-sm text-danger">
+          Failed to load alerts.
+        </p>
+      )}
 
-        <div className="overflow-hidden rounded-md border border-neutral-200 bg-white">
-          <table className="w-full text-sm">
-            <thead className="bg-neutral-50 text-left text-xs uppercase tracking-wide text-neutral-500">
+      <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-card">
+        <table className="w-full text-sm">
+          <thead className="border-b border-border bg-surface-muted text-left text-xs font-semibold uppercase tracking-wide text-text-subtle">
+            <tr>
+              <th className="px-4 py-3">SKU</th>
+              <th className="px-4 py-3">Product</th>
+              <th className="px-4 py-3 text-right">Available</th>
+              <th className="px-4 py-3 text-right">Threshold</th>
+              <th className="px-4 py-3"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {isFetching && !data && (
               <tr>
-                <th className="px-3 py-2">SKU</th>
-                <th className="px-3 py-2">Product</th>
-                <th className="px-3 py-2 text-right">Available</th>
-                <th className="px-3 py-2 text-right">Threshold</th>
-                <th className="px-3 py-2"></th>
+                <td colSpan={5} className="px-3 py-6 text-center text-text-subtle">
+                  Loading…
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100">
-              {isFetching && !data && (
-                <tr>
-                  <td colSpan={5} className="px-3 py-3 text-center text-neutral-500">
-                    Loading…
-                  </td>
-                </tr>
-              )}
-              {data?.data.map((row) => (
-                <tr key={row.sku} className="bg-red-50/30">
-                  <td className="px-3 py-2 font-mono text-xs">{row.sku}</td>
-                  <td className="px-3 py-2 text-neutral-800">{row.productName ?? "—"}</td>
-                  <td className="px-3 py-2 text-right font-semibold text-red-700">
-                    {row.quantityAvailable}
-                  </td>
-                  <td className="px-3 py-2 text-right">{row.lowStockThreshold}</td>
-                  <td className="px-3 py-2 text-right">
-                    <Link
-                      to={`/inventory/${encodeURIComponent(row.sku)}`}
-                      className="rounded-md bg-neutral-900 px-3 py-1 text-xs font-semibold text-white hover:bg-neutral-800"
-                    >
-                      Adjust
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-              {data && data.data.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-3 py-4 text-center text-neutral-500">
-                    No items are below threshold. 🎉
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
+            )}
+            {data?.data.map((row) => (
+              <tr key={row.sku} className="bg-danger-soft/30 transition hover:bg-danger-soft/50">
+                <td className="px-4 py-3 font-mono text-xs text-text-muted">{row.sku}</td>
+                <td className="px-4 py-3 text-text">{row.productName ?? "—"}</td>
+                <td className="px-4 py-3 text-right font-semibold text-danger">
+                  {row.quantityAvailable}
+                </td>
+                <td className="px-4 py-3 text-right text-text-muted">{row.lowStockThreshold}</td>
+                <td className="px-4 py-3 text-right">
+                  <Link
+                    to={`/inventory/${encodeURIComponent(row.sku)}`}
+                    className="inline-flex items-center rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary-hover"
+                  >
+                    Adjust
+                  </Link>
+                </td>
+              </tr>
+            ))}
+            {data && data.data.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-3 py-10 text-center">
+                  <span className="inline-flex items-center gap-2 text-sm text-success">
+                    <CheckCircle2 className="h-4 w-4" aria-hidden />
+                    No items are below threshold.
+                  </span>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </AdminShell>
   );
 }

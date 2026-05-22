@@ -1,3 +1,4 @@
+import { AlertCircle } from "lucide-react";
 import type { InputHTMLAttributes, ReactNode } from "react";
 import { forwardRef } from "react";
 
@@ -14,48 +15,32 @@ export const Field = forwardRef<HTMLInputElement, FieldProps>(function Field(
   const inputId = id ?? rest.name ?? label.toLowerCase().replace(/\s+/g, "-");
   return (
     <label className="block" htmlFor={inputId}>
-      <span className="text-sm font-medium text-neutral-800">{label}</span>
+      <span className="text-sm font-medium text-text">{label}</span>
       <input
         ref={ref}
         id={inputId}
         {...rest}
         className={
-          "mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm " +
-          "shadow-sm placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none " +
-          "focus:ring-1 focus:ring-neutral-900 " +
-          (error ? "border-red-400 focus:border-red-500 focus:ring-red-500" : "")
+          "mt-1 block w-full rounded-md border bg-surface px-3 py-2 text-sm shadow-sm transition " +
+          "placeholder:text-text-subtle focus:outline-none focus:ring-2 focus:ring-ring/30 " +
+          (error
+            ? "border-danger focus:border-danger focus:ring-danger/30"
+            : "border-border focus:border-primary")
         }
       />
-      {hint ? <p className="mt-1 text-xs text-neutral-500">{hint}</p> : null}
-      {error ? <p className="mt-1 text-xs text-red-600">{error}</p> : null}
+      {hint ? <p className="mt-1 text-xs text-text-subtle">{hint}</p> : null}
+      {error ? <p className="mt-1 text-xs text-danger">{error}</p> : null}
     </label>
   );
 });
 
 export function FormError({ children }: { children: ReactNode }) {
   return (
-    <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-      {children}
+    <div className="flex items-start gap-2 rounded-md border border-danger/30 bg-danger-soft px-3 py-2 text-sm text-danger">
+      <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" aria-hidden />
+      <div>{children}</div>
     </div>
   );
 }
 
-interface ButtonProps {
-  type?: "button" | "submit";
-  disabled?: boolean;
-  onClick?: () => void;
-  children: ReactNode;
-}
-
-export function Button({ type = "button", disabled, onClick, children }: ButtonProps) {
-  return (
-    <button
-      type={type}
-      disabled={disabled}
-      onClick={onClick}
-      className="w-full rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
-    >
-      {children}
-    </button>
-  );
-}
+export { Button } from "./ui/Button";
