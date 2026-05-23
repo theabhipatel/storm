@@ -25,8 +25,8 @@ function parseArgs(argv: string[]): Args {
     );
     process.exit(2);
   }
-  if (out.password!.length < 12) {
-    console.error("Password must be at least 12 characters.");
+  if (out.password!.length < 4) {
+    console.error("Password must be at least 4 characters.");
     process.exit(2);
   }
   if (!/.+@.+\..+/.test(out.email!)) {
