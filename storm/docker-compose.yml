@@ -232,9 +232,9 @@ services:
       mongodb:  { condition: service_healthy }
     environment:
       <<: [*pg-env, *common-env]
-      DEFAULT_ADMIN_EMAIL: admin@gmail.com
-      DEFAULT_ADMIN_PASSWORD: "1234"
-      DEFAULT_ADMIN_NAME: Admin
+      DEFAULT_ADMIN_EMAIL: ${DEFAULT_ADMIN_EMAIL:-admin@gmail.com}
+      DEFAULT_ADMIN_PASSWORD: ${DEFAULT_ADMIN_PASSWORD:-1234}
+      DEFAULT_ADMIN_NAME: ${DEFAULT_ADMIN_NAME:-Admin}
     volumes:
       - storm-keys:/keys
     restart: "no"
