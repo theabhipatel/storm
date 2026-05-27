@@ -91,13 +91,13 @@ services:
                   local pkey  = require "resty.openssl.pkey"
 
                   local PUB_PEM = [[-----BEGIN PUBLIC KEY-----
-                  MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmIlTb3tIp9Y8T/WoDYv+
-                  ATxcfz7sb8MpnLIBCm42C1TWZs/Ap1bykdniVQXecGFXUDwVTuLwPjkTO9TLTb9X
-                  a422Oo4pGU8xAyfTfCoSGw3LNvtvJ1Sgy7E104O0AxWvLUZ6AjRGsx9qdnkqP6Vu
-                  MXeHhk4SS0o0C2vXA5aF+m8kY50G30pjRx+ZoKqf3BD948aDbG4EyXZehU1AsV1s
-                  U1/AFsugZs7Cfcikfy/Cpmx2+kSKpHansOJqEkctU8qpFdNj/QLSbc2rVEeoMCw3
-                  HX+6e6sSgq/qSX6doEa+Btt+9KMD+mnqwWaD3F+d5AdARB61GBF+TrsExz385C3J
-                  OQIDAQAB
+                  MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA3G/RaoZz3FKr9OKTPyEP
+                  V+ldlvxDmwrkBbRUd5fi/o52eNdOKGo4oD3Svx66JBa5kRUO7/As7V6TyklLsNll
+                  WllKYWOXhFZJF+6oyzD9vBy5FyAtJ5wOjs7QpPEDN1CxnVktCgSDYgcUy78Dh2+Q
+                  0bxRky3Hr4NP7Nv4qSB7UI4lGR9duuP9s8Xcv4RxDY9eV/mw7MEUYa0072kry2AH
+                  HvlCDB4vVb8Q1JNLbA9lNz6TIBIVR2+n+1bMuzjPJZjdaNDExeztc+n+ZeZTxmhf
+                  OP/DBEpv57AXligHYT5oxQAvXOTMBHZXTiEHCtfyKWY2pNpT5Dxe3tb9OeIvsED2
+                  lQIDAQAB
                   -----END PUBLIC KEY-----]]
                   local ISSUER   = "storm-identity"
                   local AUDIENCE = "storm"
@@ -111,6 +111,12 @@ services:
 
                   local function deny(code, message)
                     return kong.response.exit(401, { error = { code = code, message = message } })
+                  end
+
+                  -- CORS preflight requests carry no auth; let the global cors
+                  -- plugin / upstream handle them without authenticating.
+                  if kong.request.get_method() == "OPTIONS" then
+                    return
                   end
 
                   local auth = kong.request.get_header("authorization")

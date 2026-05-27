@@ -131,21 +131,21 @@ export function dashboardRouter(deps: { config: Config; logger: Logger }): Route
       const newUsersCount =
         usersRes.status === "fulfilled" &&
         usersRes.value.status === 200 &&
-        usersRes.value.data
+        Array.isArray(usersRes.value.data?.items)
           ? usersRes.value.data.items.length
           : (warnings.push("users_metric_unavailable"), 0);
 
       const lowStockCount =
         lowStockRes.status === "fulfilled" &&
         lowStockRes.value.status === 200 &&
-        lowStockRes.value.data
+        Array.isArray(lowStockRes.value.data?.items)
           ? lowStockRes.value.data.items.length
           : (warnings.push("low_stock_unavailable"), 0);
 
       const failedCount =
         failedPaymentsRes.status === "fulfilled" &&
         failedPaymentsRes.value.status === 200 &&
-        failedPaymentsRes.value.data
+        Array.isArray(failedPaymentsRes.value.data?.items)
           ? failedPaymentsRes.value.data.items.length
           : (warnings.push("failed_payments_unavailable"), 0);
 

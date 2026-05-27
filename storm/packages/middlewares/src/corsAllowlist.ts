@@ -33,7 +33,7 @@ export function corsAllowlist(opts: CorsAllowlistOptions): RequestHandler {
     );
     res.setHeader(
       "access-control-allow-headers",
-      "authorization,content-type,idempotency-key,x-request-id",
+      "authorization,content-type,idempotency-key,x-request-id,x-csrf-token,x-user-id,x-user-role,x-session-id,x-token-version",
     );
     res.setHeader("access-control-max-age", "600");
 
