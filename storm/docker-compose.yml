@@ -298,6 +298,8 @@ services:
     environment:
       <<: *common-env
       PORT: "3005"
+      CATALOG_BASE_URL:   http://catalog:3002
+      INVENTORY_BASE_URL: http://inventory:3004
     ports: ["3005:3005"]
 
   order:
@@ -343,6 +345,9 @@ services:
       <<: [*common-env, *pg-env]
       PORT: "3008"
       DATABASE_URL: ${DB_URL_WISHLIST:-postgresql://wishlist:wishlist_pw@postgres:5432/wishlist?schema=public}
+      CATALOG_BASE_URL:   http://catalog:3002
+      INVENTORY_BASE_URL: http://inventory:3004
+      CART_BASE_URL:      http://cart:3005
     ports: ["3008:3008"]
 
   recommendation:
@@ -352,6 +357,9 @@ services:
     environment:
       <<: *common-env
       PORT: "3009"
+      CATALOG_BASE_URL:   http://catalog:3002
+      SEARCH_BASE_URL:    http://search:3003
+      INVENTORY_BASE_URL: http://inventory:3004
     ports: ["3009:3009"]
 
   notification:

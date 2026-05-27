@@ -78,9 +78,11 @@ services:
           - "/api/auth/mobile/send-otp"
           - "/api/auth/mobile/verify-otp"
           - "/api/admin/users"
+          - "/api/me"
         strip_path: false
         plugins:
-          - name: pre-function
+          - &jwt_check
+            name: pre-function
             config:
               access:
                 - |
@@ -199,6 +201,93 @@ services:
                   kong.service.request.set_header("x-user-role", role or "customer")
                   if sid then kong.service.request.set_header("x-session-id", sid) end
                   kong.service.request.set_header("x-token-version", tostring(tv))
+
+  # ---------- Cart service (JWT required) ----------
+  - name: cart
+    url: http://host.docker.internal:3005
+    connect_timeout: 5000
+    read_timeout: 30000
+    write_timeout: 30000
+    routes:
+      - name: cart-routes
+        paths: ["/api/cart"]
+        strip_path: false
+        plugins:
+          - *jwt_check
+
+  # ---------- Wishlist service (JWT required) ----------
+  - name: wishlist
+    url: http://host.docker.internal:3008
+    connect_timeout: 5000
+    read_timeout: 30000
+    write_timeout: 30000
+    routes:
+      - name: wishlist-routes
+        paths: ["/api/wishlist"]
+        strip_path: false
+        plugins:
+          - *jwt_check
+
+  # ---------- Order / checkout service (JWT required) ----------
+  - name: order
+    url: http://host.docker.internal:3006
+    connect_timeout: 5000
+    read_timeout: 30000
+    write_timeout: 30000
+    routes:
+      - name: order-routes
+        paths:
+          - "/api/orders"
+          - "/api/checkout"
+        strip_path: false
+        plugins:
+          - *jwt_check
+
+  # ---------- Search service (public; no JWT) ----------
+  - name: search
+    url: http://host.docker.internal:3003
+    connect_timeout: 5000
+    read_timeout: 30000
+    write_timeout: 30000
+    routes:
+      - name: search-routes
+        paths:
+          - "/api/search"
+          - "/api/autocomplete"
+          - "/api/facets"
+        strip_path: false
+
+  # ---------- Recommendation service (public; no JWT) ----------
+  - name: recommendation
+    url: http://host.docker.internal:3009
+    connect_timeout: 5000
+    read_timeout: 30000
+    write_timeout: 30000
+    routes:
+      - name: recs-routes
+        paths: ["/api/recs"]
+        strip_path: false
+
+  # ---------- Web BFF (public read aggregation + /me/notifications) ----------
+  - name: web-bff
+    url: http://host.docker.internal:3000
+    connect_timeout: 5000
+    read_timeout: 30000
+    write_timeout: 30000
+    routes:
+      - name: me-notifications
+        paths: ["/api/me/notifications"]
+        strip_path: false
+        plugins:
+          - *jwt_check
+      - name: web-bff-public
+        paths:
+          - "/api/p"
+          - "/api/c"
+          - "/api/home"
+          - "/api/categories"
+          - "/api/brands"
+        strip_path: false
 
 # ---------- Global plugins ----------
 plugins:
