@@ -14,7 +14,7 @@ interface OrderMetrics {
 }
 
 interface LowStockResponse {
-  items: Array<{ sku: string; available: number; threshold: number }>;
+  data: Array<{ sku: string; available: number; threshold: number }>;
 }
 
 interface UserListResponse {
@@ -138,8 +138,8 @@ export function dashboardRouter(deps: { config: Config; logger: Logger }): Route
       const lowStockCount =
         lowStockRes.status === "fulfilled" &&
         lowStockRes.value.status === 200 &&
-        Array.isArray(lowStockRes.value.data?.items)
-          ? lowStockRes.value.data.items.length
+        Array.isArray(lowStockRes.value.data?.data)
+          ? lowStockRes.value.data.data.length
           : (warnings.push("low_stock_unavailable"), 0);
 
       const failedCount =
