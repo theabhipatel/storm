@@ -6,6 +6,7 @@ import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios";
 import type { BaseQueryFn } from "@reduxjs/toolkit/query";
 
 import { getStoreRef } from "./storeRef";
+import { tokenStore } from "./tokenStore";
 import { toApiError, type ApiError } from "./apiError";
 
 export const CATALOG_BASE_URL =
@@ -32,6 +33,10 @@ function makeClient(baseURL: string): AxiosInstance {
     if (user) {
       config.headers["X-User-Id"] = user.id;
       config.headers["X-User-Role"] = user.role;
+    }
+    const token = tokenStore.get();
+    if (token && !config.headers["Authorization"]) {
+      config.headers["Authorization"] = `Bearer ${token}`;
     }
     return config;
   });

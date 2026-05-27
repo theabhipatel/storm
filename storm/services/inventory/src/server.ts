@@ -7,6 +7,7 @@ import {
   notFoundHandler,
   securityHeaders,
   idempotencyKey,
+  corsAllowlist,
 } from "@storm/middlewares";
 import { metricsHandler } from "@storm/observability";
 import type { Logger } from "@storm/logger";
@@ -35,6 +36,14 @@ export function createServer(opts: CreateServerOptions): Express {
   app.disable("x-powered-by");
   app.use(express.json({ limit: "1mb" }));
   app.use(securityHeaders({ apiCsp: true }));
+  app.use(
+    corsAllowlist({
+      allowedOrigins: (process.env["ALLOWED_ORIGINS"] ?? "http://localhost:3200,http://localhost:3300")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+    }),
+  );
   app.use(requestContext());
   app.use(requestLogger(logger));
   app.use(authContext());

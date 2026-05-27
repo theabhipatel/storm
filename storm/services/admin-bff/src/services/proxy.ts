@@ -9,6 +9,8 @@ export function forwardHeaders(req: Request): Record<string, string> {
   if (userId) headers["x-user-id"] = userId;
   const role = req.header("x-user-role");
   if (role) headers["x-user-role"] = role;
+  const auth = req.header("authorization");
+  if (auth) headers["authorization"] = auth;
   const idem = req.header("idempotency-key");
   if (idem) headers["idempotency-key"] = idem;
   const reqId = req.header("x-request-id");

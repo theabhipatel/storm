@@ -77,6 +77,7 @@ services:
           - "/api/auth/password-change"
           - "/api/auth/mobile/send-otp"
           - "/api/auth/mobile/verify-otp"
+          - "/api/admin/users"
         strip_path: false
         plugins:
           - name: pre-function
