@@ -14,25 +14,44 @@ const ALLOWED_RAZORPAY = [
   "https://lumberjack.razorpay.com",
 ];
 
+function originOf(url: string | undefined): string | null {
+  if (!url) return null;
+  try {
+    return new URL(url).origin;
+  } catch {
+    return null;
+  }
+}
+
 function buildCsp(nonce: string, env: string): string {
   const scriptSrc =
     env === "production"
       ? `'self' 'strict-dynamic' 'nonce-${nonce}' https://checkout.razorpay.com`
       : `'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com`;
-  return [
+
+  const apiOrigins = [
+    originOf(process.env["NEXT_PUBLIC_API_BASE_URL"]) ?? "http://localhost:8000",
+    originOf(process.env["NEXT_PUBLIC_KONG_BASE_URL"]),
+    originOf(process.env["NEXT_PUBLIC_WEB_BFF_BASE_URL"]),
+  ].filter((v): v is string => Boolean(v));
+  const connectSrc = Array.from(new Set(["'self'", ...apiOrigins, ...ALLOWED_RAZORPAY])).join(" ");
+
+  const directives = [
     "default-src 'self'",
     `script-src ${scriptSrc}`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
-    `connect-src 'self' ${ALLOWED_RAZORPAY.join(" ")}`,
+    `connect-src ${connectSrc}`,
     "frame-src https://api.razorpay.com https://checkout.razorpay.com",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
     "object-src 'none'",
-    "upgrade-insecure-requests",
-  ].join("; ");
+  ];
+  const allApiOriginsHttps = apiOrigins.length > 0 && apiOrigins.every((o) => o.startsWith("https://"));
+  if (env === "production" && allApiOriginsHttps) directives.push("upgrade-insecure-requests");
+  return directives.join("; ");
 }
 
 function generateNonce(): string {
