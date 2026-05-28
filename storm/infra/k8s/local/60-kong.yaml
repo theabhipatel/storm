@@ -1,0 +1,62 @@
+# Kong API gateway (DB-less / declarative). The config is NOT in this file — it
+# lives in the `kong-config` ConfigMap that up.sh renders from kong.k8s.yml with
+# the real JWT public key injected. Port-forward 8000 to reach it from a browser.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kong
+  namespace: storm-local
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: kong }
+  template:
+    metadata:
+      labels: { app: kong }
+    spec:
+      containers:
+        - name: kong
+          image: kong:3.7
+          env:
+            - { name: KONG_DATABASE, value: "off" }
+            - { name: KONG_DECLARATIVE_CONFIG, value: /etc/kong/kong.yml }
+            - { name: KONG_PROXY_ACCESS_LOG, value: /dev/stdout }
+            - { name: KONG_ADMIN_ACCESS_LOG, value: /dev/stdout }
+            - { name: KONG_PROXY_ERROR_LOG, value: /dev/stderr }
+            - { name: KONG_ADMIN_ERROR_LOG, value: /dev/stderr }
+            - { name: KONG_ADMIN_LISTEN, value: "0.0.0.0:8001" }
+            - { name: KONG_PROXY_LISTEN, value: "0.0.0.0:8000" }
+            - { name: KONG_LOG_LEVEL, value: notice }
+            - { name: KONG_PLUGINS, value: bundled }
+            - { name: KONG_UNTRUSTED_LUA, value: sandbox }
+            - { name: KONG_UNTRUSTED_LUA_SANDBOX_REQUIRES, value: "resty.redis,cjson,resty.openssl.pkey" }
+          ports:
+            - { name: proxy, containerPort: 8000 }
+            - { name: admin, containerPort: 8001 }
+          volumeMounts:
+            - { name: config, mountPath: /etc/kong }
+          readinessProbe:
+            httpGet: { path: /status, port: 8001 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /status, port: 8001 }
+            initialDelaySeconds: 20
+            periodSeconds: 15
+      volumes:
+        - name: config
+          configMap:
+            name: kong-config
+            items:
+              - { key: kong.yml, path: kong.yml }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kong
+  namespace: storm-local
+spec:
+  selector: { app: kong }
+  ports:
+    - { name: proxy, port: 8000, targetPort: 8000 }
+    - { name: admin, port: 8001, targetPort: 8001 }

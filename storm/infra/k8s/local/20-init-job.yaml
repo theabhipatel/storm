@@ -1,0 +1,46 @@
+# One-shot init: runs Prisma migrate deploy for every Postgres-backed service and
+# bootstraps the default admin user. JWT keys are NOT generated here (unlike
+# compose) — up.sh generates them once and stores them in the `jwt-keys` Secret
+# so they always match the public key baked into Kong's config.
+#
+# Re-run with:  kubectl -n storm-local delete job init --ignore-not-found && kubectl apply -f 20-init-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: init
+  namespace: storm-local
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: init
+          image: storm/init:local
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef: { name: storm-common }
+            - configMapRef: { name: storm-pg-urls }
+          env:
+            - { name: DEFAULT_ADMIN_EMAIL,    value: admin@gmail.com }
+            - { name: DEFAULT_ADMIN_PASSWORD, value: "1234" }
+            - { name: DEFAULT_ADMIN_NAME,     value: Admin }
+          command:
+            - bash
+            - -lc
+            - |
+              set -euo pipefail
+              for s in identity catalog inventory order payment wishlist media; do
+                url_var="DB_URL_${s^^}"
+                export DATABASE_URL="${!url_var}"
+                echo "==> Migrating $s"
+                pnpm --filter "@storm/$s" exec prisma migrate deploy
+              done
+              export DATABASE_URL="$DB_URL_IDENTITY"
+              echo "==> Bootstrapping admin user"
+              pnpm --filter @storm/identity exec tsx scripts/bootstrap-admin.ts \
+                --email="$DEFAULT_ADMIN_EMAIL" \
+                --password="$DEFAULT_ADMIN_PASSWORD" \
+                --name="$DEFAULT_ADMIN_NAME" \
+                || echo "(admin bootstrap skipped — likely already exists)"
+              echo "==> Init complete."

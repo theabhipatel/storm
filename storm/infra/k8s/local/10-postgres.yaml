@@ -1,0 +1,89 @@
+# Postgres 16 — one DB + least-privilege role per service. The init script that
+# creates them is the same one used by docker-compose, embedded as a ConfigMap.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init
+  namespace: storm-local
+data:
+  00-init.sh: |
+    #!/bin/sh
+    set -eu
+    SERVICES="identity|identity|identity_pw catalog|catalog|catalog_pw inventory|inventory|inventory_pw order|order|order_pw payment|payment|payment_pw wishlist|wishlist|wishlist_pw media|media|media_pw"
+    for entry in $SERVICES; do
+      DB=$(echo "$entry" | cut -d'|' -f1)
+      USER=$(echo "$entry" | cut -d'|' -f2)
+      PASS=$(echo "$entry" | cut -d'|' -f3)
+      echo "==> Creating database '$DB' with user '$USER'"
+      psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "postgres" <<-EOSQL
+        CREATE USER "$USER" WITH PASSWORD '$PASS' CREATEDB;
+        CREATE DATABASE "$DB" OWNER "$USER";
+        REVOKE ALL ON DATABASE "$DB" FROM PUBLIC;
+        GRANT CONNECT, TEMPORARY ON DATABASE "$DB" TO "$USER";
+    EOSQL
+      psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$DB" <<-EOSQL
+        GRANT USAGE, CREATE ON SCHEMA public TO "$USER";
+        ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO "$USER";
+        ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO "$USER";
+    EOSQL
+    done
+    echo "==> Postgres init complete."
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data
+  namespace: storm-local
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: storm-local
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  selector:
+    matchLabels: { app: postgres }
+  template:
+    metadata:
+      labels: { app: postgres }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          env:
+            - { name: POSTGRES_USER,     value: postgres }
+            - { name: POSTGRES_PASSWORD, value: postgres }
+            - { name: POSTGRES_DB,       value: postgres }
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/postgresql/data }
+            - { name: init, mountPath: /docker-entrypoint-initdb.d }
+          readinessProbe:
+            exec: { command: ["pg_isready", "-U", "postgres"] }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: postgres-data }
+        - name: init
+          configMap:
+            name: postgres-init
+            defaultMode: 0755
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: storm-local
+spec:
+  selector: { app: postgres }
+  ports:
+    - { port: 5432, targetPort: 5432 }

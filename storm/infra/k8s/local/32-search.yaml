@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: search
+  namespace: storm-local
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: search }
+  template:
+    metadata:
+      labels: { app: search }
+    spec:
+      containers:
+        - name: app
+          image: storm/search:local
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef: { name: storm-common }
+          env:
+            - { name: PORT, value: "3003" }
+            - { name: OPENSEARCH_URL,   value: http://opensearch:9200 }
+            - { name: CATALOG_BASE_URL, value: http://catalog:3002 }
+          ports:
+            - { containerPort: 3003 }
+          readinessProbe:
+            tcpSocket: { port: 3003 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket: { port: 3003 }
+            initialDelaySeconds: 20
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: search
+  namespace: storm-local
+spec:
+  selector: { app: search }
+  ports:
+    - { port: 3003, targetPort: 3003 }

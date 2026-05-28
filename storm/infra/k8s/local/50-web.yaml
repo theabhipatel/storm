@@ -1,0 +1,46 @@
+# Next.js customer storefront. Server-side fetches use the in-cluster web-bff;
+# client-side calls use localhost:* URLs baked into the image, which work because
+# up.sh port-forwards web-bff (3000) and kong (8000) to those same ports.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: storm-local
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: web }
+  template:
+    metadata:
+      labels: { app: web }
+    spec:
+      containers:
+        - name: app
+          image: storm/web:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: NODE_ENV, value: production }
+            - { name: PORT, value: "3200" }
+            - { name: WEB_BFF_BASE_URL,              value: http://web-bff:3000 }
+            - { name: NEXT_PUBLIC_WEB_BFF_BASE_URL,  value: http://localhost:3000 }
+            - { name: NEXT_PUBLIC_KONG_BASE_URL,     value: http://localhost:8000 }
+          ports:
+            - { containerPort: 3200 }
+          readinessProbe:
+            tcpSocket: { port: 3200 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket: { port: 3200 }
+            initialDelaySeconds: 20
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  namespace: storm-local
+spec:
+  selector: { app: web }
+  ports:
+    - { port: 3200, targetPort: 3200 }

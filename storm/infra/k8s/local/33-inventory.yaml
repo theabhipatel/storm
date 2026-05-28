@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory
+  namespace: storm-local
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: inventory }
+  template:
+    metadata:
+      labels: { app: inventory }
+    spec:
+      containers:
+        - name: app
+          image: storm/inventory:local
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef: { name: storm-common }
+          env:
+            - { name: PORT, value: "3004" }
+            - { name: DATABASE_URL, value: "postgresql://inventory:inventory_pw@postgres:5432/inventory?schema=public" }
+          ports:
+            - { containerPort: 3004 }
+            - { containerPort: 50051 }   # gRPC (order-service calls this)
+          readinessProbe:
+            tcpSocket: { port: 3004 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket: { port: 3004 }
+            initialDelaySeconds: 20
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory
+  namespace: storm-local
+spec:
+  selector: { app: inventory }
+  ports:
+    - { name: http, port: 3004,  targetPort: 3004 }
+    - { name: grpc, port: 50051, targetPort: 50051 }

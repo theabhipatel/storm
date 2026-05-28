@@ -1,0 +1,62 @@
+# OpenSearch 2.16 — single node, security disabled (local only). memory_lock is
+# off here because pinning memory needs privileges we don't grant on minikube.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: opensearch-data
+  namespace: storm-local
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opensearch
+  namespace: storm-local
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  selector:
+    matchLabels: { app: opensearch }
+  template:
+    metadata:
+      labels: { app: opensearch }
+    spec:
+      # OpenSearch needs vm.max_map_count >= 262144. minikube's default is high
+      # enough; if the pod crashes on bootstrap, run:
+      #   minikube ssh -- 'sudo sysctl -w vm.max_map_count=262144'
+      containers:
+        - name: opensearch
+          image: opensearchproject/opensearch:2.16.0
+          env:
+            - { name: discovery.type,            value: single-node }
+            - { name: bootstrap.memory_lock,     value: "false" }
+            - { name: OPENSEARCH_JAVA_OPTS,      value: "-Xms512m -Xmx512m" }
+            - { name: DISABLE_SECURITY_PLUGIN,   value: "true" }
+            - { name: DISABLE_INSTALL_DEMO_CONFIG, value: "true" }
+          ports:
+            - { containerPort: 9200 }
+            - { containerPort: 9600 }
+          volumeMounts:
+            - { name: data, mountPath: /usr/share/opensearch/data }
+          readinessProbe:
+            httpGet: { path: /_cluster/health, port: 9200 }
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 30
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: opensearch-data }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: opensearch
+  namespace: storm-local
+spec:
+  selector: { app: opensearch }
+  ports:
+    - { port: 9200, targetPort: 9200 }

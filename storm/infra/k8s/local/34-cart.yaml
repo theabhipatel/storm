@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cart
+  namespace: storm-local
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: cart }
+  template:
+    metadata:
+      labels: { app: cart }
+    spec:
+      containers:
+        - name: app
+          image: storm/cart:local
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef: { name: storm-common }
+          env:
+            - { name: PORT, value: "3005" }
+            - { name: CATALOG_BASE_URL,   value: http://catalog:3002 }
+            - { name: INVENTORY_BASE_URL, value: http://inventory:3004 }
+          ports:
+            - { containerPort: 3005 }
+          readinessProbe:
+            tcpSocket: { port: 3005 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket: { port: 3005 }
+            initialDelaySeconds: 20
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cart
+  namespace: storm-local
+spec:
+  selector: { app: cart }
+  ports:
+    - { port: 3005, targetPort: 3005 }

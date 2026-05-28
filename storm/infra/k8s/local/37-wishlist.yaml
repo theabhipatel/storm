@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wishlist
+  namespace: storm-local
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: wishlist }
+  template:
+    metadata:
+      labels: { app: wishlist }
+    spec:
+      containers:
+        - name: app
+          image: storm/wishlist:local
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef: { name: storm-common }
+          env:
+            - { name: PORT, value: "3008" }
+            - { name: DATABASE_URL, value: "postgresql://wishlist:wishlist_pw@postgres:5432/wishlist?schema=public" }
+            - { name: CATALOG_BASE_URL,   value: http://catalog:3002 }
+            - { name: INVENTORY_BASE_URL, value: http://inventory:3004 }
+            - { name: CART_BASE_URL,      value: http://cart:3005 }
+          ports:
+            - { containerPort: 3008 }
+          readinessProbe:
+            tcpSocket: { port: 3008 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket: { port: 3008 }
+            initialDelaySeconds: 20
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wishlist
+  namespace: storm-local
+spec:
+  selector: { app: wishlist }
+  ports:
+    - { port: 3008, targetPort: 3008 }

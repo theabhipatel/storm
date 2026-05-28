@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-bff
+  namespace: storm-local
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: admin-bff }
+  template:
+    metadata:
+      labels: { app: admin-bff }
+    spec:
+      containers:
+        - name: app
+          image: storm/admin-bff:local
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef: { name: storm-common }
+          env:
+            - { name: PORT, value: "3100" }
+            - { name: ORDER_BASE_URL,        value: http://order:3006 }
+            - { name: PAYMENT_BASE_URL,      value: http://payment:3007 }
+            - { name: INVENTORY_BASE_URL,    value: http://inventory:3004 }
+            - { name: IDENTITY_BASE_URL,     value: http://identity:3001 }
+            - { name: NOTIFICATION_BASE_URL, value: http://notification:3010 }
+            - { name: ALLOWED_ORIGINS,       value: http://localhost:3300 }
+          ports:
+            - { containerPort: 3100 }
+          readinessProbe:
+            tcpSocket: { port: 3100 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket: { port: 3100 }
+            initialDelaySeconds: 20
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin-bff
+  namespace: storm-local
+spec:
+  selector: { app: admin-bff }
+  ports:
+    - { port: 3100, targetPort: 3100 }

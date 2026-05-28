@@ -1,0 +1,29 @@
+# Shared env for all services. Service-to-service URLs use k8s Service DNS
+# names, which match the docker-compose service names (catalog, redis, ...),
+# so the application code needs no changes.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: storm-common
+  namespace: storm-local
+data:
+  NODE_ENV: production
+  LOG_LEVEL: info
+  KAFKA_BROKERS: redpanda:9092
+  REDIS_URL: redis://redis:6379
+---
+# Per-service Postgres connection strings. Only the `init` Job (which migrates
+# every DB) consumes the whole set; each service also sets its own DATABASE_URL.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: storm-pg-urls
+  namespace: storm-local
+data:
+  DB_URL_IDENTITY:  postgresql://identity:identity_pw@postgres:5432/identity?schema=public
+  DB_URL_CATALOG:   postgresql://catalog:catalog_pw@postgres:5432/catalog?schema=public
+  DB_URL_INVENTORY: postgresql://inventory:inventory_pw@postgres:5432/inventory?schema=public
+  DB_URL_ORDER:     postgresql://order:order_pw@postgres:5432/order?schema=public
+  DB_URL_PAYMENT:   postgresql://payment:payment_pw@postgres:5432/payment?schema=public
+  DB_URL_WISHLIST:  postgresql://wishlist:wishlist_pw@postgres:5432/wishlist?schema=public
+  DB_URL_MEDIA:     postgresql://media:media_pw@postgres:5432/media?schema=public

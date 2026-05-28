@@ -1,0 +1,72 @@
+# Redpanda (Kafka API) — single-node dev mode. In-cluster clients reach it at
+# redpanda:9092, which is also what the broker advertises.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redpanda-data
+  namespace: storm-local
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redpanda
+  namespace: storm-local
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  selector:
+    matchLabels: { app: redpanda }
+  template:
+    metadata:
+      labels: { app: redpanda }
+    spec:
+      containers:
+        - name: redpanda
+          image: redpandadata/redpanda:v24.2.5
+          args:
+            - redpanda
+            - start
+            - --kafka-addr=internal://0.0.0.0:9092
+            - --advertise-kafka-addr=internal://redpanda:9092
+            - --schema-registry-addr=internal://0.0.0.0:8081
+            - --rpc-addr=0.0.0.0:33145
+            - --advertise-rpc-addr=redpanda:33145
+            - --mode=dev-container
+            - --smp=1
+            - --memory=1G
+            - --reserve-memory=0M
+            - --overprovisioned
+            - --node-id=0
+            - --check=false
+          ports:
+            - { containerPort: 9092 }
+            - { containerPort: 8081 }
+            - { containerPort: 9644 }
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/redpanda/data }
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "rpk cluster health | grep -E 'Healthy:.+true'"]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 20
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: redpanda-data }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redpanda
+  namespace: storm-local
+spec:
+  selector: { app: redpanda }
+  ports:
+    - { name: kafka,           port: 9092, targetPort: 9092 }
+    - { name: schema-registry, port: 8081, targetPort: 8081 }
+    - { name: admin,           port: 9644, targetPort: 9644 }

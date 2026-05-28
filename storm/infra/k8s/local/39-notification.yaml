@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification
+  namespace: storm-local
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: notification }
+  template:
+    metadata:
+      labels: { app: notification }
+    spec:
+      containers:
+        - name: app
+          image: storm/notification:local
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef: { name: storm-common }
+          env:
+            - { name: PORT, value: "3010" }
+            - { name: MONGO_URL, value: "mongodb://root:root@mongodb:27017/?authSource=admin" }
+            - { name: MONGO_DB,  value: storm_notification }
+            - { name: SMTP_HOST, value: mailhog }
+            - { name: SMTP_PORT, value: "1025" }
+            - { name: SMTP_USER,     value: "" }
+            - { name: SMTP_PASSWORD, value: "" }
+            - { name: SMTP_FROM, value: "Storm <noreply@storm.local>" }
+          ports:
+            - { containerPort: 3010 }
+          readinessProbe:
+            tcpSocket: { port: 3010 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket: { port: 3010 }
+            initialDelaySeconds: 20
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification
+  namespace: storm-local
+spec:
+  selector: { app: notification }
+  ports:
+    - { port: 3010, targetPort: 3010 }
