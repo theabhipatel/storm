@@ -6,6 +6,7 @@ import Link from "next/link";
 import { EmptyState } from "../../components/domain/EmptyState";
 import { Button } from "../../components/ui/Button";
 import { Card, CardHeader } from "../../components/ui/Card";
+import { ProductImage } from "../../components/ui/ProductImage";
 import { CartSkeleton } from "../../components/ui/Skeletons";
 import { formatINR } from "../../lib/format";
 import { toast } from "../../lib/toast";
@@ -85,7 +86,12 @@ function CartItemRow(props: {
           href={`/p/${item.slug}`}
           className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-border bg-surface-muted"
         >
-          <div className="h-full w-full bg-surface-strong" />
+          <ProductImage
+            src={item.primaryImageUrl}
+            alt={item.name}
+            seed={item.slug}
+            className="h-full w-full object-contain p-1"
+          />
         </Link>
         <div className="flex-1">
           <Link

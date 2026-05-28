@@ -47,6 +47,7 @@ export function RecsCarousel(props: {
                 <ProductImage
                   src={item.primaryImageUrl}
                   alt={item.name}
+                  seed={item.slug}
                   className="h-full w-full object-contain p-2 transition-transform group-hover:scale-[1.03]"
                 />
               </div>

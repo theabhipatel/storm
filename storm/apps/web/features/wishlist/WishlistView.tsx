@@ -47,6 +47,7 @@ export function WishlistView() {
               <ProductImage
                 src={null}
                 alt={item.name}
+                seed={item.slug}
                 className="h-full w-full object-contain p-3 transition-transform group-hover:scale-[1.03]"
               />
             </div>

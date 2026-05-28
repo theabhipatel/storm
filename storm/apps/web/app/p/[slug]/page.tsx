@@ -69,7 +69,7 @@ export default async function ProductDetailPage({
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,520px)_1fr] lg:gap-8">
           <div className="lg:sticky lg:top-24 lg:self-start">
             <Card padding="md" className="lg:p-4">
-              <ProductGallery assets={product.mediaAssets} />
+              <ProductGallery assets={product.mediaAssets} fallbackSeed={params.slug} />
             </Card>
           </div>
 

@@ -32,6 +32,7 @@ export function ProductCard({ hit }: { hit: SearchHit }) {
           <ProductImage
             src={hit.primaryImageUrl}
             alt={hit.name}
+            seed={hit.slug}
             className="h-full w-full object-contain p-3 transition-transform duration-300 group-hover:scale-[1.03]"
           />
           {!hit.inStock ? (

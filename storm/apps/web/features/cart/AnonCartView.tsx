@@ -48,6 +48,7 @@ export function AnonCartView() {
                 <ProductImage
                   src={item.primaryImageUrl}
                   alt={item.name}
+                  seed={item.slug}
                   className="h-full w-full object-contain p-1"
                 />
               </Link>

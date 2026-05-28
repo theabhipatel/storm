@@ -1,29 +1,41 @@
 "use client";
 
-import { ImageIcon } from "lucide-react";
 import { useState } from "react";
 
 import type { MediaAssetDto } from "@storm/contracts";
 
-export function ProductGallery({ assets }: { assets: MediaAssetDto[] }) {
+import { fallbackImageUrl, isPlaceholderAsset } from "../../lib/productImage";
+
+export function ProductGallery({
+  assets,
+  fallbackSeed,
+}: {
+  assets: MediaAssetDto[];
+  fallbackSeed?: string;
+}) {
   const [activeIdx, setActiveIdx] = useState(0);
-  if (assets.length === 0) {
+  const displayAssets = assets.filter((a) => !isPlaceholderAsset(a));
+  if (displayAssets.length === 0) {
     return (
-      <div className="flex aspect-square w-full flex-col items-center justify-center gap-2 rounded-lg border border-border bg-surface text-text-subtle">
-        <ImageIcon className="h-10 w-10" aria-hidden="true" />
-        <span className="text-sm">No image</span>
+      <div className="overflow-hidden rounded-lg border border-border bg-surface">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={fallbackImageUrl(fallbackSeed, 800)}
+          alt={fallbackSeed ?? "Product image"}
+          className="aspect-square w-full object-cover"
+        />
       </div>
     );
   }
-  const active = assets[activeIdx] ?? assets[0]!;
+  const active = displayAssets[activeIdx] ?? displayAssets[0]!;
   const heroUrl =
     active.thumbnails.find((t) => t.variant === "lg")?.url ?? active.original;
 
   return (
     <div className="flex flex-col gap-3 sm:flex-row">
-      {assets.length > 1 ? (
+      {displayAssets.length > 1 ? (
         <ul className="order-2 flex max-h-[420px] gap-2 overflow-x-auto sm:order-1 sm:max-h-none sm:w-16 sm:flex-col sm:overflow-y-auto sm:overflow-x-hidden">
-          {assets.map((a, i) => {
+          {displayAssets.map((a, i) => {
             const thumbUrl =
               a.thumbnails.find((t) => t.variant === "sm")?.url ?? a.original;
             const active = i === activeIdx;
